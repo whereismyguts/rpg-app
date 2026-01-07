@@ -5,7 +5,7 @@ from aiogram.filters import Command, CommandObject
 from aiogram.types import Message
 
 from services.sheets import sheets_service
-from services.session import set_active_uuid, clear_session, is_logged_in
+from services.session import login_user, logout_user, is_logged_in
 from bot.keyboards import main_menu_keyboard
 
 router = Router()
@@ -34,7 +34,7 @@ async def cmd_login(message: Message, command: CommandObject):
         )
         return
 
-    set_active_uuid(message.from_user.id, target_uuid)
+    login_user(message.from_user.id, target_uuid, sheets_service)
 
     await message.answer(
         f"LOGIN SUCCESSFUL\n"
@@ -50,14 +50,14 @@ async def cmd_login(message: Message, command: CommandObject):
 @router.message(Command("logout"))
 async def cmd_logout(message: Message):
     """Logout from current account."""
-    if not is_logged_in(message.from_user.id):
+    if not is_logged_in(message.from_user.id, sheets_service):
         await message.answer(
             "You are not logged in.\n\n"
             "Use /login <PLAYER_ID> or send a QR code photo."
         )
         return
 
-    clear_session(message.from_user.id)
+    logout_user(message.from_user.id, sheets_service)
 
     await message.answer(
         "LOGGED OUT\n"

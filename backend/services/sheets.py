@@ -127,6 +127,41 @@ class SheetsService:
             pass
         return False
 
+    def link_telegram_to_player(self, telegram_id: int, player_uuid: str) -> bool:
+        """Link a telegram user to a player. Clears previous links."""
+        sheet = self.get_users_sheet()
+        try:
+            # First, clear any existing link for this telegram_id
+            records = sheet.get_all_records()
+            for i, record in enumerate(records):
+                if str(record.get("user_id")) == str(telegram_id):
+                    # Clear this link (row index is i+2 because of header)
+                    sheet.update_cell(i + 2, 1, "")
+
+            # Now link to the new player
+            cell = sheet.find(player_uuid)
+            if cell:
+                # user_id is in column A (index 1)
+                sheet.update_cell(cell.row, 1, telegram_id)
+                return True
+        except Exception:
+            pass
+        return False
+
+    def unlink_telegram(self, telegram_id: int) -> bool:
+        """Unlink a telegram user from their current player."""
+        sheet = self.get_users_sheet()
+        try:
+            records = sheet.get_all_records()
+            for i, record in enumerate(records):
+                if str(record.get("user_id")) == str(telegram_id):
+                    # Clear this link (row index is i+2 because of header)
+                    sheet.update_cell(i + 2, 1, "")
+                    return True
+        except Exception:
+            pass
+        return False
+
     def get_attribute_config(self) -> list[dict]:
         sheet = self.get_attributes_sheet()
         return sheet.get_all_records()

@@ -5,7 +5,7 @@ from aiogram.types import Message
 
 from services.sheets import sheets_service
 from services.qr_decoder import decode_qr_from_bytes
-from services.session import set_active_uuid
+from services.session import login_user
 from bot.keyboards import main_menu_keyboard
 
 router = Router()
@@ -50,7 +50,7 @@ async def handle_photo(message: Message, bot: Bot):
         return
 
     # Login as this player
-    set_active_uuid(message.from_user.id, player_uuid)
+    login_user(message.from_user.id, player_uuid, sheets_service)
 
     await message.answer(
         f"LOGIN SUCCESSFUL\n"

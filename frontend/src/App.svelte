@@ -17,9 +17,25 @@
     if (window.Telegram?.WebApp) {
       window.Telegram.WebApp.ready();
       window.Telegram.WebApp.expand();
+
+      // Try to login via Telegram initData (synced with bot session)
+      if (window.Telegram.WebApp.initData) {
+        try {
+          const result = await api.login(window.Telegram.WebApp.initData, null, null);
+          if (result && result.player_uuid) {
+            api.setPlayerUuid(result.player_uuid);
+            auth.login(result);
+            loading = false;
+            return;
+          }
+        } catch (e) {
+          // Not logged in via bot, show login screen
+          console.log('No bot session, showing login');
+        }
+      }
     }
 
-    // Only restore from localStorage if user previously logged in via QR/UUID
+    // Fallback: restore from localStorage if user previously logged in via QR/UUID
     const savedUuid = auth.restore();
     if (savedUuid) {
       try {
@@ -31,7 +47,6 @@
       }
     }
 
-    // No automatic Telegram auth - user must login via QR or UUID
     loading = false;
   });
 
