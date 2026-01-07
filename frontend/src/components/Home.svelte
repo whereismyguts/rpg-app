@@ -113,5 +113,13 @@
     >
       [ REFRESH ]
     </button>
+
+    <button
+      class="btn btn-block text-danger"
+      style="margin-top: 12px;"
+      on:click={() => dispatch('logout')}
+    >
+      [ LOGOUT ]
+    </button>
   {/if}
 </div>

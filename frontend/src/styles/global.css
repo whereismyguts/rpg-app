@@ -170,6 +170,17 @@ body {
   box-shadow: 0 0 20px var(--terminal-amber);
 }
 
+.btn.text-danger {
+  border-color: var(--error-red);
+  color: var(--error-red);
+}
+
+.btn.text-danger:hover:not(:disabled) {
+  background: var(--error-red);
+  color: var(--terminal-dark);
+  box-shadow: 0 0 20px var(--error-red);
+}
+
 /* Input fields */
 input, textarea {
   background: rgba(20, 255, 0, 0.05);

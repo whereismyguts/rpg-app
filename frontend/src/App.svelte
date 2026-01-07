@@ -88,7 +88,7 @@
 
   <div class="page">
     {#if currentPage === 'home'}
-      <Home on:navigate={(e) => navigate(e.detail)} />
+      <Home on:navigate={(e) => navigate(e.detail)} on:logout={handleLogout} />
     {:else if currentPage === 'stats'}
       <Stats />
     {:else if currentPage === 'send'}
