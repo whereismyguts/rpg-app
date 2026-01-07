@@ -13,22 +13,15 @@
   let error = '';
 
   onMount(async () => {
-    // Try to restore session
-    const savedUuid = auth.restore();
+    // Initialize Telegram WebApp if available
+    if (window.Telegram?.WebApp) {
+      window.Telegram.WebApp.ready();
+      window.Telegram.WebApp.expand();
+    }
 
-    // Check for Telegram WebApp initData
-    if (window.Telegram?.WebApp?.initData) {
-      try {
-        const result = await api.login(window.Telegram.WebApp.initData, null, null);
-        api.setPlayerUuid(result.player_uuid);
-        auth.login(result);
-        window.Telegram.WebApp.ready();
-        window.Telegram.WebApp.expand();
-      } catch (e) {
-        error = e.message;
-      }
-    } else if (savedUuid) {
-      // Try to restore from localStorage
+    // Only restore from localStorage if user previously logged in via QR/UUID
+    const savedUuid = auth.restore();
+    if (savedUuid) {
       try {
         api.setPlayerUuid(savedUuid);
         const user = await api.getMe();
@@ -38,6 +31,7 @@
       }
     }
 
+    // No automatic Telegram auth - user must login via QR or UUID
     loading = false;
   });
 

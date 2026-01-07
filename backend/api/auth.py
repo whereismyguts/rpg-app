@@ -12,8 +12,8 @@ router = APIRouter()
 
 
 class LoginRequest(BaseModel):
-    init_data: Optional[str] = None  # Telegram WebApp initData
-    player_uuid: Optional[str] = None  # Alternative: UUID input
+    init_data: Optional[str] = None  # Telegram WebApp initData (for future onboarding)
+    player_uuid: Optional[str] = None  # UUID from QR code or manual input
     password: Optional[str] = None  # Optional password
 
 
