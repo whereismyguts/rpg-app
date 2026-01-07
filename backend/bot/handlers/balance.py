@@ -3,13 +3,14 @@ from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery
 
 from services.sheets import sheets_service
+from services.session import get_current_user
 
 router = Router()
 
 
 @router.message(Command("balance"))
 async def cmd_balance(message: Message):
-    user = sheets_service.get_user_by_telegram_id(message.from_user.id)
+    user = get_current_user(message.from_user.id, sheets_service)
     if user:
         await message.answer(
             f"BALANCE\n"
@@ -23,7 +24,7 @@ async def cmd_balance(message: Message):
 
 @router.callback_query(F.data == "menu_balance")
 async def callback_balance(callback: CallbackQuery):
-    user = sheets_service.get_user_by_telegram_id(callback.from_user.id)
+    user = get_current_user(callback.from_user.id, sheets_service)
     if user:
         await callback.message.answer(
             f"BALANCE\n"

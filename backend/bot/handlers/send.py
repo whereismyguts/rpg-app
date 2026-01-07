@@ -5,6 +5,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
 from services.sheets import sheets_service
+from services.session import get_current_user
 from bot.keyboards import transfer_confirm_keyboard
 
 router = Router()
@@ -17,7 +18,7 @@ class TransferState(StatesGroup):
 
 @router.message(Command("send"))
 async def cmd_send(message: Message, state: FSMContext, command: CommandObject):
-    user = sheets_service.get_user_by_telegram_id(message.from_user.id)
+    user = get_current_user(message.from_user.id, sheets_service)
     if not user:
         await message.answer("Not registered. Use /start first.")
         return
@@ -87,7 +88,7 @@ async def cmd_send(message: Message, state: FSMContext, command: CommandObject):
 
 @router.callback_query(F.data == "menu_send")
 async def callback_send(callback: CallbackQuery, state: FSMContext):
-    user = sheets_service.get_user_by_telegram_id(callback.from_user.id)
+    user = get_current_user(callback.from_user.id, sheets_service)
     if not user:
         await callback.message.answer("Not registered. Use /start first.")
         await callback.answer()
@@ -114,7 +115,7 @@ async def process_uuid(message: Message, state: FSMContext):
         )
         return
 
-    sender = sheets_service.get_user_by_telegram_id(message.from_user.id)
+    sender = get_current_user(message.from_user.id, sheets_service)
     if target_uuid == sender["player_uuid"]:
         await message.answer("ERROR: Cannot send caps to yourself.")
         return
@@ -138,7 +139,7 @@ async def process_amount(message: Message, state: FSMContext):
         await message.answer("ERROR: Invalid amount. Enter a number.")
         return
 
-    sender = sheets_service.get_user_by_telegram_id(message.from_user.id)
+    sender = get_current_user(message.from_user.id, sheets_service)
     if sender["balance"] < amount:
         await message.answer(
             f"ERROR: Insufficient funds.\n"
@@ -165,7 +166,7 @@ async def confirm_transfer(callback: CallbackQuery):
     target_uuid = parts[1]
     amount = float(parts[2])
 
-    sender = sheets_service.get_user_by_telegram_id(callback.from_user.id)
+    sender = get_current_user(callback.from_user.id, sheets_service)
     if not sender:
         await callback.message.edit_text("ERROR: User not found.")
         await callback.answer()
