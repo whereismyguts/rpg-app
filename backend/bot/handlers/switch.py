@@ -1,26 +1,26 @@
-"""Switch account handlers."""
+"""Login/logout handlers."""
 
 from aiogram import Router
 from aiogram.filters import Command, CommandObject
 from aiogram.types import Message
 
 from services.sheets import sheets_service
-from services.session import set_active_uuid, clear_session, get_active_uuid
+from services.session import set_active_uuid, clear_session, is_logged_in
 from bot.keyboards import main_menu_keyboard
 
 router = Router()
 
 
-@router.message(Command("switch"))
-async def cmd_switch(message: Message, command: CommandObject):
-    """Switch to a different player account by UUID."""
+@router.message(Command("login"))
+async def cmd_login(message: Message, command: CommandObject):
+    """Login as a player by UUID."""
     if not command.args:
         await message.answer(
-            "SWITCH ACCOUNT\n"
-            "==============\n\n"
-            "Usage: /switch <PLAYER_ID>\n\n"
-            "Example: /switch TEST0002\n\n"
-            "Use /myaccount to return to your own account."
+            "LOGIN\n"
+            "=====\n\n"
+            "Usage: /login <PLAYER_ID>\n\n"
+            "Example: /login TEST0001\n\n"
+            "Or send a photo of your QR code."
         )
         return
 
@@ -37,46 +37,33 @@ async def cmd_switch(message: Message, command: CommandObject):
     set_active_uuid(message.from_user.id, target_uuid)
 
     await message.answer(
-        f"ACCOUNT SWITCHED\n"
+        f"LOGIN SUCCESSFUL\n"
         f"================\n\n"
-        f"Now acting as: {target_user['name']}\n"
+        f"Welcome, {target_user['name']}!\n"
         f"Player ID: {target_user['player_uuid']}\n"
         f"Balance: {target_user['balance']} caps\n\n"
-        f"Use /myaccount to return to your own account.",
+        f"Use /logout to sign out.",
         reply_markup=main_menu_keyboard()
     )
 
 
-@router.message(Command("myaccount"))
-async def cmd_myaccount(message: Message):
-    """Return to own Telegram-linked account."""
-    active_uuid = get_active_uuid(message.from_user.id)
-
-    if not active_uuid:
-        user = sheets_service.get_user_by_telegram_id(message.from_user.id)
-        if user:
-            await message.answer(
-                f"You're already using your own account.\n\n"
-                f"Name: {user['name']}\n"
-                f"Player ID: {user['player_uuid']}\n"
-                f"Balance: {user['balance']} caps",
-                reply_markup=main_menu_keyboard()
-            )
-        else:
-            await message.answer("Not registered. Use /start first.")
+@router.message(Command("logout"))
+async def cmd_logout(message: Message):
+    """Logout from current account."""
+    if not is_logged_in(message.from_user.id):
+        await message.answer(
+            "You are not logged in.\n\n"
+            "Use /login <PLAYER_ID> or send a QR code photo."
+        )
         return
 
     clear_session(message.from_user.id)
 
-    user = sheets_service.get_user_by_telegram_id(message.from_user.id)
-    if user:
-        await message.answer(
-            f"RETURNED TO OWN ACCOUNT\n"
-            f"=======================\n\n"
-            f"Name: {user['name']}\n"
-            f"Player ID: {user['player_uuid']}\n"
-            f"Balance: {user['balance']} caps",
-            reply_markup=main_menu_keyboard()
-        )
-    else:
-        await message.answer("Not registered. Use /start first.")
+    await message.answer(
+        "LOGGED OUT\n"
+        "==========\n\n"
+        "You have been signed out.\n\n"
+        "To login again:\n"
+        "• Send a photo of your QR code\n"
+        "• Use /login <PLAYER_ID>"
+    )

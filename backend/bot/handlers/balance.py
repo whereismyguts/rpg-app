@@ -7,6 +7,8 @@ from services.session import get_current_user
 
 router = Router()
 
+NOT_LOGGED_IN = "Not logged in. Use /login <PLAYER_ID> or send a QR code photo."
+
 
 @router.message(Command("balance"))
 async def cmd_balance(message: Message):
@@ -19,7 +21,7 @@ async def cmd_balance(message: Message):
             f"Caps: {user['balance']}"
         )
     else:
-        await message.answer("Not registered. Use /start first.")
+        await message.answer(NOT_LOGGED_IN)
 
 
 @router.callback_query(F.data == "menu_balance")
@@ -33,5 +35,5 @@ async def callback_balance(callback: CallbackQuery):
             f"Caps: {user['balance']}"
         )
     else:
-        await callback.message.answer("Not registered. Use /start first.")
+        await callback.message.answer(NOT_LOGGED_IN)
     await callback.answer()

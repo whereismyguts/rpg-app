@@ -38,11 +38,14 @@ def format_stats(stats: dict) -> str:
     return "\n".join(lines)
 
 
+NOT_LOGGED_IN = "Not logged in. Use /login <PLAYER_ID> or send a QR code photo."
+
+
 @router.message(Command("stats"))
 async def cmd_stats(message: Message):
     user = get_current_user(message.from_user.id, sheets_service)
     if not user:
-        await message.answer("Not registered. Use /start first.")
+        await message.answer(NOT_LOGGED_IN)
         return
 
     stats = sheets_service.get_user_stats(user["player_uuid"])
@@ -56,7 +59,7 @@ async def cmd_stats(message: Message):
 async def callback_stats(callback: CallbackQuery):
     user = get_current_user(callback.from_user.id, sheets_service)
     if not user:
-        await callback.message.answer("Not registered. Use /start first.")
+        await callback.message.answer(NOT_LOGGED_IN)
         await callback.answer()
         return
 

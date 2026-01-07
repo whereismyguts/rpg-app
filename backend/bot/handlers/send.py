@@ -10,6 +10,8 @@ from bot.keyboards import transfer_confirm_keyboard
 
 router = Router()
 
+NOT_LOGGED_IN = "Not logged in. Use /login <PLAYER_ID> or send a QR code photo."
+
 
 class TransferState(StatesGroup):
     waiting_for_uuid = State()
@@ -20,7 +22,7 @@ class TransferState(StatesGroup):
 async def cmd_send(message: Message, state: FSMContext, command: CommandObject):
     user = get_current_user(message.from_user.id, sheets_service)
     if not user:
-        await message.answer("Not registered. Use /start first.")
+        await message.answer(NOT_LOGGED_IN)
         return
 
     # Check if command has arguments: /send UUID amount
@@ -90,7 +92,7 @@ async def cmd_send(message: Message, state: FSMContext, command: CommandObject):
 async def callback_send(callback: CallbackQuery, state: FSMContext):
     user = get_current_user(callback.from_user.id, sheets_service)
     if not user:
-        await callback.message.answer("Not registered. Use /start first.")
+        await callback.message.answer(NOT_LOGGED_IN)
         await callback.answer()
         return
 
