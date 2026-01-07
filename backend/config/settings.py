@@ -27,7 +27,27 @@ class Settings(BaseSettings):
         """Load Google credentials from JSON string or file."""
         # Option 1: JSON string in environment variable
         if self.google_credentials_json:
-            return json.loads(self.google_credentials_json)
+            creds_str = self.google_credentials_json.strip()
+
+            # Check if it's base64 encoded (doesn't start with {)
+            if not creds_str.startswith('{'):
+                import base64
+                try:
+                    creds_str = base64.b64decode(creds_str).decode('utf-8')
+                except Exception:
+                    pass
+
+            # Try parsing as-is first
+            try:
+                return json.loads(creds_str)
+            except json.JSONDecodeError as e:
+                # Fix: newlines in the string might be literal instead of escaped
+                # This happens when env vars contain actual newline characters
+                creds_fixed = creds_str.replace('\n', '\\n').replace('\r', '')
+                try:
+                    return json.loads(creds_fixed)
+                except json.JSONDecodeError:
+                    raise ValueError(f"Cannot parse GOOGLE_CREDENTIALS_JSON: {e}")
 
         # Get project root (parent of backend/)
         project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
