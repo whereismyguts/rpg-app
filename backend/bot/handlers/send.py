@@ -1,5 +1,5 @@
 from aiogram import Router, F
-from aiogram.filters import Command
+from aiogram.filters import Command, CommandObject
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
@@ -16,17 +16,72 @@ class TransferState(StatesGroup):
 
 
 @router.message(Command("send"))
-async def cmd_send(message: Message, state: FSMContext):
+async def cmd_send(message: Message, state: FSMContext, command: CommandObject):
     user = sheets_service.get_user_by_telegram_id(message.from_user.id)
     if not user:
         await message.answer("Not registered. Use /start first.")
         return
 
+    # Check if command has arguments: /send UUID amount
+    if command.args:
+        args = command.args.split()
+        if len(args) >= 2:
+            target_uuid = args[0].upper()
+            try:
+                amount = float(args[1])
+                # Direct transfer with confirmation
+                target = sheets_service.get_user_by_uuid(target_uuid)
+                if not target:
+                    await message.answer(f"ERROR: Player {target_uuid} not found.")
+                    return
+                if target_uuid == user["player_uuid"]:
+                    await message.answer("ERROR: Cannot send caps to yourself.")
+                    return
+                if amount <= 0:
+                    await message.answer("ERROR: Amount must be positive.")
+                    return
+                if user["balance"] < amount:
+                    await message.answer(f"ERROR: Insufficient funds. Balance: {user['balance']} caps")
+                    return
+
+                await message.answer(
+                    f"CONFIRM TRANSFER\n"
+                    f"================\n\n"
+                    f"To: {target['name']}\n"
+                    f"Amount: {amount} caps\n\n"
+                    f"Confirm?",
+                    reply_markup=transfer_confirm_keyboard(target_uuid, amount),
+                )
+                return
+            except ValueError:
+                await message.answer("ERROR: Invalid amount. Use: /send UUID amount")
+                return
+        elif len(args) == 1:
+            # Only UUID provided, ask for amount
+            target_uuid = args[0].upper()
+            target = sheets_service.get_user_by_uuid(target_uuid)
+            if not target:
+                await message.answer(f"ERROR: Player {target_uuid} not found.")
+                return
+            if target_uuid == user["player_uuid"]:
+                await message.answer("ERROR: Cannot send caps to yourself.")
+                return
+
+            await state.update_data(target_uuid=target_uuid, target_name=target["name"])
+            await state.set_state(TransferState.waiting_for_amount)
+            await message.answer(
+                f"Recipient: {target['name']}\n"
+                f"Your balance: {user['balance']} caps\n\n"
+                f"Enter amount to send:"
+            )
+            return
+
     await state.set_state(TransferState.waiting_for_uuid)
     await message.answer(
         "TRANSFER CAPS\n"
         "=============\n\n"
-        "Enter recipient's Player ID:"
+        "Enter recipient's Player ID:\n\n"
+        "Or use: /send <UUID> <amount>"
     )
 
 
