@@ -12,5 +12,5 @@
       <div class="stat-segment" class:filled={i < value}></div>
     {/each}
   </div>
-  <span class="stat-value">{value}/{max}</span>
+  <span class="stat-value">{value}</span>
 </div>
