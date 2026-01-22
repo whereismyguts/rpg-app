@@ -1,4 +1,4 @@
-from aiogram import Router, F
+from aiogram import Router, F, Bot
 from aiogram.filters import Command, CommandObject
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
@@ -6,6 +6,7 @@ from aiogram.fsm.state import State, StatesGroup
 
 from services.sheets import sheets_service
 from services.session import get_current_user
+from services.qr_decoder import decode_qr_from_bytes
 from bot.keyboards import transfer_confirm_keyboard
 
 router = Router()
@@ -83,7 +84,8 @@ async def cmd_send(message: Message, state: FSMContext, command: CommandObject):
     await message.answer(
         "TRANSFER CAPS\n"
         "=============\n\n"
-        "Enter recipient's Player ID:\n\n"
+        "Enter recipient's Player ID\n"
+        "or send a photo of their QR code.\n\n"
         "Or use: /send <UUID> <amount>"
     )
 
@@ -100,12 +102,56 @@ async def callback_send(callback: CallbackQuery, state: FSMContext):
     await callback.message.answer(
         "TRANSFER CAPS\n"
         "=============\n\n"
-        "Enter recipient's Player ID:"
+        "Enter recipient's Player ID\n"
+        "or send a photo of their QR code."
     )
     await callback.answer()
 
 
-@router.message(TransferState.waiting_for_uuid)
+@router.message(TransferState.waiting_for_uuid, F.photo)
+async def process_uuid_photo(message: Message, state: FSMContext, bot: Bot):
+    """Handle QR photo for recipient lookup during transfer."""
+    photo = message.photo[-1]
+    file = await bot.get_file(photo.file_id)
+    file_bytes = await bot.download_file(file.file_path)
+    image_bytes = file_bytes.read()
+
+    qr_data = decode_qr_from_bytes(image_bytes)
+    if not qr_data:
+        await message.answer(
+            "QR CODE NOT DETECTED\n"
+            "Please send a clear photo of the recipient's QR code\n"
+            "or enter their Player ID manually."
+        )
+        return
+
+    target_uuid = qr_data.strip().upper()
+    target_user = sheets_service.get_user_by_uuid(target_uuid)
+
+    if not target_user:
+        await message.answer(
+            f"ERROR: Player {target_uuid} not found.\n"
+            "Please try again or enter Player ID manually."
+        )
+        return
+
+    sender = get_current_user(message.from_user.id, sheets_service)
+    if target_uuid == sender["player_uuid"]:
+        await message.answer("ERROR: Cannot send caps to yourself.")
+        return
+
+    await state.update_data(target_uuid=target_uuid, target_name=target_user["name"])
+    await state.set_state(TransferState.waiting_for_amount)
+    await message.answer(
+        f"QR SCANNED\n"
+        f"==========\n\n"
+        f"Recipient: {target_user['name']}\n"
+        f"Your balance: {sender['balance']} caps\n\n"
+        f"Enter amount to send:"
+    )
+
+
+@router.message(TransferState.waiting_for_uuid, F.text)
 async def process_uuid(message: Message, state: FSMContext):
     target_uuid = message.text.strip().upper()
     target_user = sheets_service.get_user_by_uuid(target_uuid)

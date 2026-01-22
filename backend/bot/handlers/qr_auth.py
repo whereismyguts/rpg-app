@@ -2,6 +2,7 @@
 
 from aiogram import Router, F, Bot
 from aiogram.types import Message
+from aiogram.filters import StateFilter
 
 from services.sheets import sheets_service
 from services.qr_decoder import decode_qr_from_bytes
@@ -11,7 +12,7 @@ from bot.keyboards import main_menu_keyboard
 router = Router()
 
 
-@router.message(F.photo)
+@router.message(F.photo, StateFilter(None))
 async def handle_photo(message: Message, bot: Bot):
     """Handle photo messages - try to decode QR and login as that player."""
     # Get the largest photo

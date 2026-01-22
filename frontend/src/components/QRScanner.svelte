@@ -1,84 +1,85 @@
 <script>
-  import { createEventDispatcher } from 'svelte';
-  import jsQR from 'jsqr';
+  import { createEventDispatcher, onMount, onDestroy } from 'svelte';
+  import { Html5Qrcode } from 'html5-qrcode';
 
   const dispatch = createEventDispatcher();
 
-  let fileInput;
+  let scanner = null;
   let error = '';
   let scanning = false;
+  let cameraReady = false;
+  const scannerId = 'qr-scanner-' + Math.random().toString(36).substr(2, 9);
 
-  async function handleFileSelect(event) {
-    const file = event.target.files[0];
-    if (!file) return;
+  onMount(async () => {
+    await startScanner();
+  });
 
-    scanning = true;
+  onDestroy(() => {
+    stopScanner();
+  });
+
+  async function startScanner() {
     error = '';
+    scanning = true;
 
     try {
-      const imageData = await loadImage(file);
-      const code = jsQR(imageData.data, imageData.width, imageData.height);
+      scanner = new Html5Qrcode(scannerId);
 
-      if (code) {
-        dispatch('scan', { data: code.data });
-      } else {
-        error = 'No QR code found in image';
-      }
+      await scanner.start(
+        { facingMode: 'environment' },
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 250 },
+          aspectRatio: 1.0,
+        },
+        (decodedText) => {
+          dispatch('scan', { data: decodedText });
+          stopScanner();
+        },
+        () => {}
+      );
+
+      cameraReady = true;
     } catch (e) {
-      error = 'Failed to process image';
-    } finally {
+      console.error('Camera error:', e);
+      if (e.toString().includes('NotAllowedError')) {
+        error = 'Camera access denied. Please allow camera permissions.';
+      } else if (e.toString().includes('NotFoundError')) {
+        error = 'No camera found on this device.';
+      } else {
+        error = 'Failed to access camera: ' + (e.message || e);
+      }
       scanning = false;
-      // Reset file input
-      if (fileInput) fileInput.value = '';
     }
   }
 
-  function loadImage(file) {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0);
-        resolve(ctx.getImageData(0, 0, img.width, img.height));
-        URL.revokeObjectURL(img.src);
-      };
-      img.onerror = () => {
-        URL.revokeObjectURL(img.src);
-        reject(new Error('Failed to load image'));
-      };
-      img.src = URL.createObjectURL(file);
-    });
+  function stopScanner() {
+    if (scanner) {
+      scanner.stop().catch(() => {});
+      scanner = null;
+    }
+    scanning = false;
+    cameraReady = false;
+  }
+
+  function handleCancel() {
+    stopScanner();
+    dispatch('cancel');
   }
 </script>
 
-<div>
-  <input
-    type="file"
-    accept="image/*"
-    bind:this={fileInput}
-    on:change={handleFileSelect}
-    style="display: none;"
-  />
-
-  <div
-    class="file-upload"
-    on:click={() => fileInput.click()}
-    on:keydown={(e) => e.key === 'Enter' && fileInput.click()}
-    role="button"
-    tabindex="0"
-  >
-    {#if scanning}
-      <p>SCANNING<span class="loading-cursor">_</span></p>
-    {:else}
-      <p>TAP TO SELECT QR IMAGE</p>
-      <p class="text-dim" style="margin-top: 8px;">
-        Upload a photo of a QR code
-      </p>
-    {/if}
+<div class="scanner-container">
+  <div class="scanner-header">
+    <p class="text-dim">SCANNING FOR QR CODE...</p>
   </div>
+
+  <div id={scannerId} class="scanner-viewport"></div>
+
+  {#if !cameraReady && scanning}
+    <div class="scanner-loading">
+      <p>INITIALIZING CAMERA<span class="loading-cursor">_</span></p>
+    </div>
+  {/if}
 
   {#if error}
     <div class="message message-error">
@@ -89,8 +90,48 @@
   <button
     class="btn btn-block"
     style="margin-top: 16px;"
-    on:click={() => dispatch('cancel')}
+    on:click={handleCancel}
   >
     [ CANCEL ]
   </button>
 </div>
+
+<style>
+  .scanner-container {
+    width: 100%;
+  }
+
+  .scanner-header {
+    text-align: center;
+    margin-bottom: 16px;
+  }
+
+  .scanner-viewport {
+    width: 100%;
+    min-height: 300px;
+    background: #0a0a0a;
+    border: 2px solid var(--terminal-green, #14ff00);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .scanner-viewport :global(video) {
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  .scanner-loading {
+    text-align: center;
+    padding: 20px;
+    color: var(--terminal-green, #14ff00);
+  }
+
+  .loading-cursor {
+    animation: blink 1s infinite;
+  }
+
+  @keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+  }
+</style>

@@ -30,11 +30,19 @@ Telegram bot + Svelte web app for RPG player accounts with Fallout-style retro U
 - [x] Base64-encoded credentials support for Railway
 - [x] QR photo decoding in bot (pyzbar)
 - [x] Disable auto Telegram auth (QR/UUID only login)
+- [x] Live camera QR scanner in web app (html5-qrcode)
+- [x] QR photo support in bot /send flow (can scan recipient QR)
 
-## Auth Flow
-- Users must log in via QR code image or UUID text input
-- Bot can decode QR codes from photos sent by users
-- Telegram WebApp auth code preserved for future onboarding feature
+## Auth & Transfer Flow
+Both bot and web have consistent QR/UUID input methods:
+
+### Login
+- **Bot**: Send photo of QR code OR use /login <UUID>
+- **Web**: Scan QR with camera OR enter UUID manually
+
+### Send Caps
+- **Bot**: /send → enter UUID OR send photo of recipient's QR → enter amount → confirm
+- **Web**: Enter UUID OR scan recipient QR with camera → enter amount → confirm
 
 ## Future Tasks
 - [ ] Telegram onboarding flow with character creation
