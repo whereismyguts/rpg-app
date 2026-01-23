@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile.dev
     container_name: rpg_app_backend
     ports:
-      - "8000:8000"
+      - "8001:8000"
     env_file:
       - .env
     volumes:
@@ -19,7 +19,7 @@ services:
       dockerfile: Dockerfile.dev
     container_name: rpg_app_frontend
     ports:
-      - "5173:5173"
+      - "5174:5173"
     volumes:
       - ./frontend:/app
       - /app/node_modules
@@ -29,5 +29,5 @@ services:
 
 # Usage:
 # docker compose up -d --build
-# Frontend: http://localhost:5173
-# Backend API: http://localhost:8000/api/health
+# Frontend: http://localhost:5174
+# Backend API: http://localhost:8001/api/health
