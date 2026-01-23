@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Generator</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background: #0a0a0a;
+            color: #14ff00;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            border-bottom: 2px solid #14ff00;
+            padding-bottom: 10px;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #14ff00;
+        }
+        .section h2 {
+            margin-top: 0;
+            color: #ffb000;
+        }
+        label {
+            display: block;
+            margin: 10px 0 5px;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            background: #1a1a1a;
+            border: 1px solid #14ff00;
+            color: #14ff00;
+            font-family: inherit;
+            font-size: 14px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 15px;
+            background: transparent;
+            border: 2px solid #ffb000;
+            color: #ffb000;
+            font-family: inherit;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: rgba(255, 176, 0, 0.2);
+        }
+        .qr-output {
+            text-align: center;
+            margin-top: 20px;
+            padding: 20px;
+            background: white;
+            display: none;
+        }
+        .qr-output canvas {
+            max-width: 100%;
+        }
+        .qr-text {
+            margin-top: 10px;
+            padding: 10px;
+            background: #1a1a1a;
+            word-break: break-all;
+        }
+        .download-btn {
+            background: #14ff00;
+            color: #0a0a0a;
+            border-color: #14ff00;
+        }
+        .download-btn:hover {
+            background: #0fcc00;
+        }
+        .batch-area {
+            width: 100%;
+            height: 150px;
+            background: #1a1a1a;
+            border: 1px solid #14ff00;
+            color: #14ff00;
+            font-family: inherit;
+            padding: 10px;
+            resize: vertical;
+        }
+        .batch-results {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .batch-item {
+            background: white;
+            padding: 10px;
+            text-align: center;
+        }
+        .batch-item p {
+            margin: 5px 0 0;
+            color: #0a0a0a;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>QR GENERATOR</h1>
+
+    <div class="section">
+        <h2>ОДИНОЧНЫЙ QR</h2>
+        <label>ТИП:</label>
+        <select id="qrType">
+            <option value="LOGIN">LOGIN - Вход игрока</option>
+            <option value="SEND">SEND - Перевод (получатель)</option>
+            <option value="PAY">PAY - Покупка товара</option>
+            <option value="PERK">PERK - Применение перка</option>
+        </select>
+
+        <label>ЗНАЧЕНИЕ (UUID / ID):</label>
+        <input type="text" id="qrValue" placeholder="например: ABC12345 или item_001">
+
+        <button onclick="generateSingle()">[ СОЗДАТЬ QR ]</button>
+
+        <div id="singleOutput" class="qr-output">
+            <canvas id="singleCanvas"></canvas>
+            <div class="qr-text" id="singleText"></div>
+            <button class="download-btn" onclick="downloadSingle()">[ СКАЧАТЬ PNG ]</button>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>ПАКЕТНАЯ ГЕНЕРАЦИЯ</h2>
+        <label>ФОРМАТ: TYPE:VALUE (по одному на строку)</label>
+        <textarea class="batch-area" id="batchInput" placeholder="LOGIN:ABC12345
+PAY:item_001
+PERK:perk_001
+SEND:XYZ99999"></textarea>
+
+        <button onclick="generateBatch()">[ СОЗДАТЬ ВСЕ ]</button>
+        <button class="download-btn" onclick="downloadAll()">[ СКАЧАТЬ ВСЕ ZIP ]</button>
+
+        <div id="batchResults" class="batch-results"></div>
+    </div>
+
+    <div class="section">
+        <h2>СПРАВКА</h2>
+        <p><strong>LOGIN:UUID</strong> - QR для входа игрока по UUID</p>
+        <p><strong>SEND:UUID</strong> - QR для быстрого перевода (открывает форму с заполненным получателем)</p>
+        <p><strong>PAY:ITEM_ID</strong> - QR для покупки товара</p>
+        <p><strong>PERK:PERK_ID</strong> - QR для применения перка</p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <script>
+        let generatedQRs = [];
+
+        function generateSingle() {
+            const type = document.getElementById('qrType').value;
+            const value = document.getElementById('qrValue').value.trim().toUpperCase();
+
+            if (!value) {
+                alert('Введите значение');
+                return;
+            }
+
+            const qrData = `${type}:${value}`;
+            const canvas = document.getElementById('singleCanvas');
+
+            QRCode.toCanvas(canvas, qrData, {
+                width: 300,
+                margin: 2,
+                color: { dark: '#000000', light: '#ffffff' }
+            }, function(error) {
+                if (error) {
+                    console.error(error);
+                    alert('Ошибка генерации QR');
+                    return;
+                }
+                document.getElementById('singleOutput').style.display = 'block';
+                document.getElementById('singleText').textContent = qrData;
+            });
+        }
+
+        function downloadSingle() {
+            const canvas = document.getElementById('singleCanvas');
+            const text = document.getElementById('singleText').textContent;
+            const link = document.createElement('a');
+            link.download = `qr_${text.replace(':', '_')}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        function generateBatch() {
+            const input = document.getElementById('batchInput').value.trim();
+            const lines = input.split('\n').filter(l => l.trim());
+            const container = document.getElementById('batchResults');
+            container.innerHTML = '';
+            generatedQRs = [];
+
+            lines.forEach((line, index) => {
+                const trimmed = line.trim().toUpperCase();
+                if (!trimmed.includes(':')) return;
+
+                const div = document.createElement('div');
+                div.className = 'batch-item';
+                const canvas = document.createElement('canvas');
+                canvas.id = `batch_${index}`;
+                div.appendChild(canvas);
+
+                const label = document.createElement('p');
+                label.textContent = trimmed;
+                div.appendChild(label);
+
+                container.appendChild(div);
+
+                QRCode.toCanvas(canvas, trimmed, {
+                    width: 150,
+                    margin: 1,
+                    color: { dark: '#000000', light: '#ffffff' }
+                }, function(error) {
+                    if (!error) {
+                        generatedQRs.push({ data: trimmed, canvas: canvas });
+                    }
+                });
+            });
+        }
+
+        async function downloadAll() {
+            if (generatedQRs.length === 0) {
+                alert('Сначала сгенерируйте QR коды');
+                return;
+            }
+
+            const zip = new JSZip();
+
+            generatedQRs.forEach((qr) => {
+                const dataUrl = qr.canvas.toDataURL('image/png');
+                const base64 = dataUrl.split(',')[1];
+                const filename = `qr_${qr.data.replace(':', '_')}.png`;
+                zip.file(filename, base64, { base64: true });
+            });
+
+            const blob = await zip.generateAsync({ type: 'blob' });
+            const link = document.createElement('a');
+            link.download = 'qr_codes.zip';
+            link.href = URL.createObjectURL(blob);
+            link.click();
+        }
+    </script>
+</body>
+</html>

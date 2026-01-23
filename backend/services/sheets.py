@@ -124,7 +124,7 @@ class SheetsService:
                 "luck": 5,
             }
 
-    def update_balance(self, player_uuid: str, new_balance: float) -> bool:
+    def update_balance(self, player_uuid: str, new_balance: int) -> bool:
         sheet = self.get_users_sheet()
         try:
             cell = sheet.find(player_uuid)

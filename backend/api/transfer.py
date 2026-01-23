@@ -9,13 +9,13 @@ router = APIRouter()
 class TransferRequest(BaseModel):
     from_uuid: str
     to_uuid: str
-    amount: float
+    amount: int
 
 
 class TransferResponse(BaseModel):
     success: bool
-    new_balance: float
-    transferred: float
+    new_balance: int
+    transferred: int
     to_name: str
 
 

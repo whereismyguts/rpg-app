@@ -114,7 +114,7 @@
 {#if loading}
   <div class="page">
     <div class="loading">
-      <p>INITIALIZING TERMINAL<span class="loading-cursor">_</span></p>
+      <p>ЗАГРУЗКА ТЕРМИНАЛА<span class="loading-cursor">_</span></p>
     </div>
   </div>
 {:else if !$auth.isAuthenticated}
@@ -126,21 +126,21 @@
       class:active={currentPage === 'home'}
       on:click={() => navigate('home')}
     >
-      HOME
+      ГЛАВНАЯ
     </button>
     <button
       class="nav-btn"
       class:active={currentPage === 'stats'}
       on:click={() => navigate('stats')}
     >
-      STATS
+      СТАТЫ
     </button>
     <button
       class="nav-btn scan-btn"
       class:active={currentPage === 'scan'}
       on:click={openScanner}
     >
-      SCAN
+      СКАН
     </button>
   </nav>
 
@@ -152,12 +152,12 @@
     {:else if currentPage === 'scan'}
       <div class="terminal">
         <div class="terminal-header">
-          <h2 class="terminal-title">QR SCANNER</h2>
-          <p class="text-dim">Scan any QR code</p>
+          <h2 class="terminal-title">СКАНЕР</h2>
+          <p class="text-dim">Наведите камеру на QR код</p>
         </div>
         {#if scanError}
           <div class="message message-error" style="margin-bottom: 16px;">
-            ERROR: {scanError}
+            ОШИБКА: {scanError}
           </div>
         {/if}
         <QRScanner

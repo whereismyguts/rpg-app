@@ -21,25 +21,25 @@
 <div class="terminal">
   <div class="terminal-header">
     <h2 class="terminal-title">S.P.E.C.I.A.L.</h2>
-    <p class="text-dim">CHARACTER ATTRIBUTES</p>
+    <p class="text-dim">ХАРАКТЕРИСТИКИ ПЕРСОНАЖА</p>
   </div>
 
   {#if loading}
     <div class="loading">
-      <p>LOADING STATS<span class="loading-cursor">_</span></p>
+      <p>ЗАГРУЗКА<span class="loading-cursor">_</span></p>
     </div>
   {:else if error}
     <div class="message message-error">
-      ERROR: {error}
+      ОШИБКА: {error}
     </div>
   {:else if stats}
     <div class="user-info">
       <p class="user-name">{stats.name}</p>
       {#if stats.profession}
-        <p class="text-dim">Profession: {stats.profession}</p>
+        <p class="text-dim">Профессия: {stats.profession}</p>
       {/if}
       {#if stats.band}
-        <p class="text-dim">Band: {stats.band}</p>
+        <p class="text-dim">Группировка: {stats.band}</p>
       {/if}
     </div>
 

@@ -12,7 +12,7 @@ router = APIRouter()
 class UserResponse(BaseModel):
     player_uuid: str
     name: str
-    balance: float
+    balance: int
     profession: str
     band: str
 

@@ -40,7 +40,7 @@ async def purchase_item(request: PurchaseRequest):
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
 
-    price = float(item.get("price", 0))
+    price = int(item.get("price", 0))
     if user["balance"] < price:
         raise HTTPException(status_code=400, detail="Insufficient funds")
 

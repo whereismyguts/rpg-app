@@ -6,7 +6,6 @@
 
   const dispatch = createEventDispatcher();
 
-  // prefilled recipient from QR scan
   export let recipient = null;
 
   let step = recipient ? 'amount' : 'recipient';
@@ -18,7 +17,6 @@
   let success = false;
   let transferResult = null;
 
-  // if recipient prop changes, update state
   $: if (recipient) {
     step = 'amount';
     recipientUuid = recipient.player_uuid;
@@ -26,13 +24,13 @@
 
   async function lookupRecipient() {
     if (!recipientUuid.trim()) {
-      error = 'Please enter recipient Player ID';
+      error = 'Введите ID получателя';
       return;
     }
 
     const uuid = recipientUuid.trim().toUpperCase();
     if (uuid === $auth.playerUuid) {
-      error = 'Cannot send to yourself';
+      error = 'Нельзя отправить себе';
       return;
     }
 
@@ -43,20 +41,20 @@
       recipient = await api.lookupUser(uuid);
       step = 'amount';
     } catch (e) {
-      error = 'Recipient not found';
+      error = 'Получатель не найден';
     } finally {
       loading = false;
     }
   }
 
   function validateAmount() {
-    const num = parseFloat(amount);
+    const num = parseInt(amount);
     if (isNaN(num) || num <= 0) {
-      error = 'Please enter a valid amount';
+      error = 'Введите корректную сумму';
       return;
     }
     if (num > $auth.balance) {
-      error = 'Insufficient funds';
+      error = 'Недостаточно крышек';
       return;
     }
     error = '';
@@ -68,7 +66,7 @@
     error = '';
 
     try {
-      transferResult = await api.sendMoney(recipient.player_uuid, parseFloat(amount));
+      transferResult = await api.sendMoney(recipient.player_uuid, parseInt(amount));
       auth.updateBalance(transferResult.new_balance);
       success = true;
     } catch (e) {
@@ -97,22 +95,22 @@
 
 <div class="terminal">
   <div class="terminal-header">
-    <h2 class="terminal-title">Transfer Caps</h2>
-    <p class="text-dim">Your balance: {$auth.balance} caps</p>
+    <h2 class="terminal-title">Перевод крышек</h2>
+    <p class="text-dim">Ваш баланс: {$auth.balance} крышек</p>
   </div>
 
   {#if success}
     <div class="message message-success">
-      <p>TRANSFER COMPLETE</p>
+      <p>ПЕРЕВОД ВЫПОЛНЕН</p>
       <p style="margin-top: 8px;">
-        Sent {transferResult.transferred} caps to {transferResult.to_name}
+        Отправлено {transferResult.transferred} крышек для {transferResult.to_name}
       </p>
       <p style="margin-top: 8px;">
-        New balance: {transferResult.new_balance} caps
+        Новый баланс: {transferResult.new_balance} крышек
       </p>
     </div>
     <button class="btn btn-block" on:click={() => dispatch('complete')}>
-      [ DONE ]
+      [ ГОТОВО ]
     </button>
   {:else if showQRScanner}
     <QRScanner
@@ -121,11 +119,11 @@
     />
   {:else if step === 'recipient'}
     <div class="form-group">
-      <label>Recipient Player ID</label>
+      <label>ID получателя</label>
       <input
         type="text"
         bind:value={recipientUuid}
-        placeholder="Enter Player ID"
+        placeholder="Введите ID"
         disabled={loading}
       />
     </div>
@@ -136,12 +134,12 @@
       on:click={() => showQRScanner = true}
       disabled={loading}
     >
-      [ SCAN QR CODE ]
+      [ СКАНИРОВАТЬ QR ]
     </button>
 
     {#if error}
       <div class="message message-error">
-        ERROR: {error}
+        ОШИБКА: {error}
       </div>
     {/if}
 
@@ -150,11 +148,11 @@
       on:click={lookupRecipient}
       disabled={loading}
     >
-      {loading ? 'SEARCHING...' : '[ FIND RECIPIENT ]'}
+      {loading ? 'ПОИСК...' : '[ НАЙТИ ]'}
     </button>
   {:else if step === 'amount'}
     <div class="user-info">
-      <p class="text-dim">SENDING TO</p>
+      <p class="text-dim">ПОЛУЧАТЕЛЬ</p>
       <p class="user-name">{recipient.name}</p>
       <p class="user-id">ID: {recipient.player_uuid}</p>
     </div>
@@ -162,51 +160,52 @@
     <hr class="separator" />
 
     <div class="form-group">
-      <label>Amount (caps)</label>
+      <label>Сумма (крышек)</label>
       <input
         type="number"
         bind:value={amount}
-        placeholder="Enter amount"
+        placeholder="Введите сумму"
         min="1"
+        step="1"
         max={$auth.balance}
       />
     </div>
 
     {#if error}
       <div class="message message-error">
-        ERROR: {error}
+        ОШИБКА: {error}
       </div>
     {/if}
 
     <div style="display: flex; gap: 12px;">
       <button class="btn" style="flex: 1;" on:click={reset}>
-        BACK
+        НАЗАД
       </button>
       <button class="btn btn-amber" style="flex: 1;" on:click={validateAmount}>
-        NEXT
+        ДАЛЕЕ
       </button>
     </div>
   {:else if step === 'confirm'}
     <div class="confirm-box">
-      <h3>CONFIRM TRANSFER</h3>
-      <p>To: <strong>{recipient.name}</strong></p>
-      <p>Amount: <strong class="text-amber">{amount} caps</strong></p>
+      <h3>ПОДТВЕРЖДЕНИЕ</h3>
+      <p>Кому: <strong>{recipient.name}</strong></p>
+      <p>Сумма: <strong class="text-amber">{amount} крышек</strong></p>
       <p class="text-dim" style="margin-top: 12px;">
-        Balance after: {$auth.balance - parseFloat(amount)} caps
+        Баланс после: {$auth.balance - parseInt(amount)} крышек
       </p>
 
       {#if error}
         <div class="message message-error">
-          ERROR: {error}
+          ОШИБКА: {error}
         </div>
       {/if}
 
       <div class="confirm-actions">
         <button class="btn" on:click={() => step = 'amount'} disabled={loading}>
-          BACK
+          НАЗАД
         </button>
         <button class="btn btn-amber" on:click={confirmTransfer} disabled={loading}>
-          {loading ? 'SENDING...' : 'CONFIRM'}
+          {loading ? 'ОТПРАВКА...' : 'ПОДТВЕРДИТЬ'}
         </button>
       </div>
     </div>

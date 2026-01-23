@@ -43,11 +43,11 @@
     } catch (e) {
       console.error('Camera error:', e);
       if (e.toString().includes('NotAllowedError')) {
-        error = 'Camera access denied. Please allow camera permissions.';
+        error = 'Доступ к камере запрещён. Разрешите доступ к камере.';
       } else if (e.toString().includes('NotFoundError')) {
-        error = 'No camera found on this device.';
+        error = 'Камера не найдена на устройстве.';
       } else {
-        error = 'Failed to access camera: ' + (e.message || e);
+        error = 'Ошибка доступа к камере: ' + (e.message || e);
       }
       scanning = false;
     }
@@ -70,20 +70,20 @@
 
 <div class="scanner-container">
   <div class="scanner-header">
-    <p class="text-dim">SCANNING FOR QR CODE...</p>
+    <p class="text-dim">СКАНИРОВАНИЕ QR КОДА...</p>
   </div>
 
   <div id={scannerId} class="scanner-viewport"></div>
 
   {#if !cameraReady && scanning}
     <div class="scanner-loading">
-      <p>INITIALIZING CAMERA<span class="loading-cursor">_</span></p>
+      <p>ИНИЦИАЛИЗАЦИЯ КАМЕРЫ<span class="loading-cursor">_</span></p>
     </div>
   {/if}
 
   {#if error}
     <div class="message message-error">
-      ERROR: {error}
+      ОШИБКА: {error}
     </div>
   {/if}
 
@@ -92,7 +92,7 @@
     style="margin-top: 16px;"
     on:click={handleCancel}
   >
-    [ CANCEL ]
+    [ ОТМЕНА ]
   </button>
 </div>
 

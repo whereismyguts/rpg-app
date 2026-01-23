@@ -33,26 +33,26 @@
       qrBase64 = result.qr_base64;
       showQR = true;
     } catch (e) {
-      error = 'Failed to load QR code';
+      error = 'Не удалось загрузить QR код';
     }
   }
 </script>
 
 <div class="terminal">
   <div class="terminal-header">
-    <p class="text-dim">LOGGED IN AS</p>
+    <p class="text-dim">ВЫ ВОШЛИ КАК</p>
     <h2 class="terminal-title">{$auth.name}</h2>
     <p class="text-dim">ID: {$auth.playerUuid}</p>
   </div>
 
   {#if loading}
     <div class="loading">
-      <p>LOADING DATA<span class="loading-cursor">_</span></p>
+      <p>ЗАГРУЗКА<span class="loading-cursor">_</span></p>
     </div>
   {:else}
     <div class="balance-display">
-      <p class="balance-label">Balance</p>
-      <p>{$auth.balance} <span class="text-amber">CAPS</span></p>
+      <p class="balance-label">Баланс</p>
+      <p>{$auth.balance} <span class="text-amber">КРЫШЕК</span></p>
     </div>
 
     <hr class="separator" />
@@ -61,7 +61,7 @@
       class="btn btn-block btn-amber"
       on:click={() => dispatch('scan')}
     >
-      [ SCAN QR CODE ]
+      [ СКАНИРОВАТЬ QR ]
     </button>
 
     <button
@@ -69,7 +69,7 @@
       style="margin-top: 12px;"
       on:click={() => dispatch('navigate', 'stats')}
     >
-      [ VIEW STATS ]
+      [ ХАРАКТЕРИСТИКИ ]
     </button>
 
     <button
@@ -77,7 +77,7 @@
       style="margin-top: 12px;"
       on:click={loadQR}
     >
-      [ SHOW MY QR ]
+      [ МОЙ QR КОД ]
     </button>
 
     {#if showQR && qrBase64}
@@ -85,24 +85,24 @@
         <img
           class="qr-image"
           src="data:image/png;base64,{qrBase64}"
-          alt="Player QR Code"
+          alt="QR код игрока"
         />
         <p class="text-dim" style="margin-top: 12px;">
-          Scan to receive caps
+          Покажите для получения крышек
         </p>
         <button
           class="btn"
           style="margin-top: 12px;"
           on:click={() => showQR = false}
         >
-          HIDE
+          СКРЫТЬ
         </button>
       </div>
     {/if}
 
     {#if error}
       <div class="message message-error">
-        ERROR: {error}
+        ОШИБКА: {error}
       </div>
     {/if}
 
@@ -111,7 +111,7 @@
       style="margin-top: 24px; border-color: var(--terminal-green-dim);"
       on:click={refreshData}
     >
-      [ REFRESH ]
+      [ ОБНОВИТЬ ]
     </button>
 
     <button
@@ -119,7 +119,7 @@
       style="margin-top: 12px;"
       on:click={() => dispatch('logout')}
     >
-      [ LOGOUT ]
+      [ ВЫЙТИ ]
     </button>
   {/if}
 </div>

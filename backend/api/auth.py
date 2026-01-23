@@ -20,7 +20,7 @@ class LoginRequest(BaseModel):
 class LoginResponse(BaseModel):
     player_uuid: str
     name: str
-    balance: float
+    balance: int
     profession: str
     band: str
 

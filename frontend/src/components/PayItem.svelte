@@ -34,18 +34,18 @@
 
 <div class="terminal">
   <div class="terminal-header">
-    <h2 class="terminal-title">PURCHASE ITEM</h2>
+    <h2 class="terminal-title">ПОКУПКА</h2>
   </div>
 
   {#if success}
     <div class="message message-success">
-      <p>PURCHASE COMPLETE</p>
-      <p style="margin-top: 8px;">You bought: {result.item.name}</p>
-      <p style="margin-top: 8px;">Paid: {result.paid} caps</p>
-      <p style="margin-top: 8px;">New balance: {result.new_balance} caps</p>
+      <p>ПОКУПКА ЗАВЕРШЕНА</p>
+      <p style="margin-top: 8px;">Вы купили: {result.item.name}</p>
+      <p style="margin-top: 8px;">Оплачено: {result.paid} крышек</p>
+      <p style="margin-top: 8px;">Новый баланс: {result.new_balance} крышек</p>
     </div>
     <button class="btn btn-block" on:click={() => dispatch('complete')}>
-      [ DONE ]
+      [ ГОТОВО ]
     </button>
   {:else if item}
     <div class="item-card">
@@ -54,43 +54,43 @@
         <p class="item-description">{item.description}</p>
       {/if}
       <div class="item-price">
-        <span class="price-label">PRICE:</span>
-        <span class="price-value text-amber">{item.price} caps</span>
+        <span class="price-label">ЦЕНА:</span>
+        <span class="price-value text-amber">{item.price} крышек</span>
       </div>
     </div>
 
     <hr class="separator" />
 
     <div class="balance-info">
-      <p>Your balance: <strong>{$auth.balance}</strong> caps</p>
+      <p>Ваш баланс: <strong>{$auth.balance}</strong> крышек</p>
       {#if !canAfford}
-        <p class="text-error">Insufficient funds!</p>
+        <p class="text-error">Недостаточно крышек!</p>
       {:else}
-        <p class="text-dim">After purchase: {$auth.balance - item.price} caps</p>
+        <p class="text-dim">После покупки: {$auth.balance - item.price} крышек</p>
       {/if}
     </div>
 
     {#if error}
       <div class="message message-error">
-        ERROR: {error}
+        ОШИБКА: {error}
       </div>
     {/if}
 
     <div class="actions">
       <button class="btn" on:click={() => dispatch('cancel')}>
-        CANCEL
+        ОТМЕНА
       </button>
       <button
         class="btn btn-amber"
         on:click={confirmPurchase}
         disabled={loading || !canAfford}
       >
-        {loading ? 'PROCESSING...' : 'CONFIRM PURCHASE'}
+        {loading ? 'ОПЛАТА...' : 'КУПИТЬ'}
       </button>
     </div>
   {:else}
     <div class="message message-error">
-      Item not found
+      Товар не найден
     </div>
   {/if}
 </div>

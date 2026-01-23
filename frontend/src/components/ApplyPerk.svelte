@@ -19,11 +19,21 @@
     const effectValue = perk.effect_value || 0;
     const sign = effectValue > 0 ? '+' : '';
 
+    const attrNames = {
+      'attr_strength': 'СИЛА',
+      'attr_perception': 'ВОСПРИЯТИЕ',
+      'attr_endurance': 'ВЫНОСЛИВОСТЬ',
+      'attr_charisma': 'ХАРИЗМА',
+      'attr_intelligence': 'ИНТЕЛЛЕКТ',
+      'attr_agility': 'ЛОВКОСТЬ',
+      'attr_luck': 'УДАЧА',
+    };
+
     if (effectType.startsWith('attr_')) {
-      const attr = effectType.replace('attr_', '').toUpperCase();
+      const attr = attrNames[effectType] || effectType.replace('attr_', '').toUpperCase();
       return `${attr} ${sign}${effectValue}`;
     } else if (effectType === 'balance') {
-      return `Balance ${sign}${effectValue} caps`;
+      return `Баланс ${sign}${effectValue} крышек`;
     }
     return '';
   }
@@ -46,19 +56,19 @@
 
 <div class="terminal">
   <div class="terminal-header">
-    <h2 class="terminal-title">APPLY PERK</h2>
+    <h2 class="terminal-title">ПЕРК</h2>
   </div>
 
   {#if success}
     <div class="message message-success">
-      <p>PERK APPLIED!</p>
-      <p style="margin-top: 8px;">You received: {result.perk.name}</p>
+      <p>ПЕРК ПРИМЕНЁН!</p>
+      <p style="margin-top: 8px;">Вы получили: {result.perk.name}</p>
       <p style="margin-top: 12px; font-size: 0.9rem;" class="text-dim">
         {result.perk.description}
       </p>
     </div>
     <button class="btn btn-block" on:click={() => dispatch('complete')}>
-      [ DONE ]
+      [ ГОТОВО ]
     </button>
   {:else if perk}
     <div class="perk-card">
@@ -67,44 +77,44 @@
         <p class="perk-description">{perk.description}</p>
       {/if}
       <div class="perk-effect">
-        <span class="effect-label">EFFECT:</span>
+        <span class="effect-label">ЭФФЕКТ:</span>
         <span class="effect-value text-amber">{getEffectDescription(perk)}</span>
       </div>
       {#if perk.one_time}
-        <p class="perk-note">* One-time use only</p>
+        <p class="perk-note">* Одноразовый</p>
       {/if}
     </div>
 
     {#if alreadyApplied}
       <div class="message message-error">
-        You have already applied this perk!
+        Этот перк уже был применён!
       </div>
       <button class="btn btn-block" on:click={() => dispatch('cancel')}>
-        [ BACK ]
+        [ НАЗАД ]
       </button>
     {:else}
       {#if error}
         <div class="message message-error">
-          ERROR: {error}
+          ОШИБКА: {error}
         </div>
       {/if}
 
       <div class="actions">
         <button class="btn" on:click={() => dispatch('cancel')}>
-          CANCEL
+          ОТМЕНА
         </button>
         <button
           class="btn btn-amber"
           on:click={confirmApply}
           disabled={loading}
         >
-          {loading ? 'APPLYING...' : 'APPLY PERK'}
+          {loading ? 'ПРИМЕНЕНИЕ...' : 'ПРИМЕНИТЬ'}
         </button>
       </div>
     {/if}
   {:else}
     <div class="message message-error">
-      Perk not found
+      Перк не найден
     </div>
   {/if}
 </div>

@@ -23,7 +23,7 @@
 
   async function handleLogin() {
     if (!playerUuid.trim()) {
-      error = 'Please enter your Player ID';
+      error = 'Введите ID игрока';
       return;
     }
 
@@ -59,7 +59,7 @@
 <div class="page">
   <div class="terminal">
     <div class="terminal-header">
-      <h1 class="terminal-title">Vault-Tec Terminal</h1>
+      <h1 class="terminal-title">Терминал Vault-Tec</h1>
       <p class="text-dim">ROBCO INDUSTRIES UNIFIED OPERATING SYSTEM</p>
     </div>
 
@@ -67,11 +67,11 @@
       <QRScanner on:scan={handleQRScan} on:cancel={() => showQRScanner = false} />
     {:else}
       <div class="form-group">
-        <label>Player ID</label>
+        <label>ID игрока</label>
         <input
           type="text"
           bind:value={playerUuid}
-          placeholder="Enter your Player ID"
+          placeholder="Введите ID"
           on:keydown={handleKeydown}
           disabled={loading}
         />
@@ -83,16 +83,16 @@
         on:click={() => showQRScanner = true}
         disabled={loading}
       >
-        [ SCAN QR CODE ]
+        [ СКАНИРОВАТЬ QR ]
       </button>
 
       {#if passwordEnabled}
         <div class="form-group">
-          <label>Password</label>
+          <label>Пароль</label>
           <input
             type="password"
             bind:value={password}
-            placeholder="Enter password"
+            placeholder="Введите пароль"
             on:keydown={handleKeydown}
             disabled={loading}
           />
@@ -101,7 +101,7 @@
 
       {#if error}
         <div class="message message-error">
-          ERROR: {error}
+          ОШИБКА: {error}
         </div>
       {/if}
 
@@ -110,7 +110,7 @@
         on:click={handleLogin}
         disabled={loading}
       >
-        {loading ? 'AUTHENTICATING...' : '[ LOGIN ]'}
+        {loading ? 'АВТОРИЗАЦИЯ...' : '[ ВОЙТИ ]'}
       </button>
     {/if}
   </div>
