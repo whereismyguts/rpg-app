@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QR Generator</title>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
     <style>
         * { box-sizing: border-box; }
         body {
@@ -66,6 +65,9 @@
             background: white;
             display: none;
         }
+        .qr-output img {
+            max-width: 100%;
+        }
         .qr-text {
             margin-top: 10px;
             padding: 10px;
@@ -98,6 +100,10 @@
             color: #0a0a0a;
             font-size: 12px;
         }
+        .batch-item img {
+            width: 150px;
+            height: 150px;
+        }
         #loginOverlay {
             position: fixed;
             top: 0; left: 0;
@@ -125,11 +131,6 @@
             display: none;
         }
         #mainContent { display: none; }
-        .loading-text {
-            color: #ffb000;
-            text-align: center;
-            padding: 10px;
-        }
         .entity-info {
             font-size: 12px;
             color: #888;
@@ -176,7 +177,7 @@
             <button type="button" onclick="generateSingle()">[ СОЗДАТЬ QR ]</button>
 
             <div id="singleOutput" class="qr-output">
-                <canvas id="singleCanvas"></canvas>
+                <img id="singleQrImage" alt="QR Code">
                 <div class="qr-text" id="singleText"></div>
                 <button type="button" class="download-btn" onclick="downloadSingle()">[ СКАЧАТЬ PNG ]</button>
             </div>
@@ -191,7 +192,6 @@ PERK:perk_001
 SEND:XYZ99999"></textarea>
 
             <button type="button" onclick="generateBatch()">[ СОЗДАТЬ ВСЕ ]</button>
-            <button type="button" class="download-btn" onclick="downloadAll()">[ СКАЧАТЬ ВСЕ ZIP ]</button>
 
             <div id="batchResults" class="batch-results"></div>
         </div>
@@ -205,14 +205,16 @@ SEND:XYZ99999"></textarea>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
     <script>
-        let generatedQRs = [];
         let entityData = { users: [], items: [], perks: [] };
 
         const API_BASE = window.location.port === '5174'
             ? 'http://localhost:8001'
             : window.location.origin;
+
+        function getQrImageUrl(data, size = 300) {
+            return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(data)}`;
+        }
 
         async function checkPassword() {
             const password = document.getElementById('adminPassword').value;
@@ -326,53 +328,41 @@ SEND:XYZ99999"></textarea>
         }
 
         function generateSingle() {
-            try {
-                const type = document.getElementById('qrType').value;
-                const value = document.getElementById('qrValue').value.trim().toUpperCase();
+            const type = document.getElementById('qrType').value;
+            const value = document.getElementById('qrValue').value.trim().toUpperCase();
 
-                console.log('Generating QR:', type, value);
-
-                if (!value) {
-                    alert('Выберите или введите значение');
-                    return;
-                }
-
-                const qrData = `${type}:${value}`;
-                const canvas = document.getElementById('singleCanvas');
-                const output = document.getElementById('singleOutput');
-                const textEl = document.getElementById('singleText');
-
-                if (typeof QRCode === 'undefined') {
-                    alert('QRCode library not loaded');
-                    return;
-                }
-
-                QRCode.toCanvas(canvas, qrData, {
-                    width: 300,
-                    margin: 2,
-                    color: { dark: '#000000', light: '#ffffff' }
-                }, function(error) {
-                    if (error) {
-                        console.error('QR Error:', error);
-                        alert('Ошибка генерации QR: ' + error.message);
-                        return;
-                    }
-                    output.style.display = 'block';
-                    textEl.textContent = qrData;
-                });
-            } catch (e) {
-                console.error('Error:', e);
-                alert('Ошибка: ' + e.message);
+            if (!value) {
+                alert('Выберите или введите значение');
+                return;
             }
+
+            const qrData = `${type}:${value}`;
+            const img = document.getElementById('singleQrImage');
+            const output = document.getElementById('singleOutput');
+            const textEl = document.getElementById('singleText');
+
+            img.src = getQrImageUrl(qrData, 300);
+            img.onload = function() {
+                output.style.display = 'block';
+                textEl.textContent = qrData;
+            };
+            img.onerror = function() {
+                alert('Ошибка генерации QR');
+            };
         }
 
         function downloadSingle() {
-            const canvas = document.getElementById('singleCanvas');
+            const img = document.getElementById('singleQrImage');
             const text = document.getElementById('singleText').textContent;
-            const link = document.createElement('a');
-            link.download = `qr_${text.replace(':', '_')}.png`;
-            link.href = canvas.toDataURL('image/png');
-            link.click();
+
+            fetch(img.src)
+                .then(res => res.blob())
+                .then(blob => {
+                    const link = document.createElement('a');
+                    link.download = `qr_${text.replace(':', '_')}.png`;
+                    link.href = URL.createObjectURL(blob);
+                    link.click();
+                });
         }
 
         function generateBatch() {
@@ -380,53 +370,40 @@ SEND:XYZ99999"></textarea>
             const lines = input.split('\n').filter(l => l.trim());
             const container = document.getElementById('batchResults');
             container.innerHTML = '';
-            generatedQRs = [];
 
-            lines.forEach((line, index) => {
+            lines.forEach((line) => {
                 const trimmed = line.trim().toUpperCase();
                 if (!trimmed.includes(':')) return;
 
                 const div = document.createElement('div');
                 div.className = 'batch-item';
-                const canvas = document.createElement('canvas');
-                div.appendChild(canvas);
+
+                const img = document.createElement('img');
+                img.src = getQrImageUrl(trimmed, 150);
+                img.alt = trimmed;
+                div.appendChild(img);
 
                 const label = document.createElement('p');
                 label.textContent = trimmed;
                 div.appendChild(label);
 
+                const btn = document.createElement('button');
+                btn.textContent = 'Скачать';
+                btn.style.cssText = 'margin-top:5px;padding:5px 10px;font-size:12px;width:auto;';
+                btn.onclick = function() {
+                    fetch(img.src)
+                        .then(res => res.blob())
+                        .then(blob => {
+                            const link = document.createElement('a');
+                            link.download = `qr_${trimmed.replace(':', '_')}.png`;
+                            link.href = URL.createObjectURL(blob);
+                            link.click();
+                        });
+                };
+                div.appendChild(btn);
+
                 container.appendChild(div);
-
-                QRCode.toCanvas(canvas, trimmed, {
-                    width: 150,
-                    margin: 1,
-                    color: { dark: '#000000', light: '#ffffff' }
-                }, function(error) {
-                    if (!error) {
-                        generatedQRs.push({ data: trimmed, canvas: canvas });
-                    }
-                });
             });
-        }
-
-        async function downloadAll() {
-            if (generatedQRs.length === 0) {
-                alert('Сначала сгенерируйте QR коды');
-                return;
-            }
-
-            const zip = new JSZip();
-            generatedQRs.forEach((qr) => {
-                const dataUrl = qr.canvas.toDataURL('image/png');
-                const base64 = dataUrl.split(',')[1];
-                zip.file(`qr_${qr.data.replace(':', '_')}.png`, base64, { base64: true });
-            });
-
-            const blob = await zip.generateAsync({ type: 'blob' });
-            const link = document.createElement('a');
-            link.download = 'qr_codes.zip';
-            link.href = URL.createObjectURL(blob);
-            link.click();
         }
     </script>
 </body>
