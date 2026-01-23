@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     # Security
     password_enabled: bool = False
     app_password: str = ""
+    admin_password: str = "admin"  # for qr generator access
     secret_key: str = "change-me-in-production"
 
     # App

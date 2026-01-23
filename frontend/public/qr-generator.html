@@ -108,58 +108,136 @@
             color: #0a0a0a;
             font-size: 12px;
         }
+        #loginOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0a0a0a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .login-box {
+            border: 2px solid #14ff00;
+            padding: 30px;
+            max-width: 400px;
+            width: 90%;
+        }
+        .login-box h2 {
+            margin-top: 0;
+            text-align: center;
+        }
+        .error-msg {
+            color: #ff4444;
+            text-align: center;
+            margin-top: 10px;
+            display: none;
+        }
+        #mainContent {
+            display: none;
+        }
     </style>
 </head>
 <body>
-    <h1>QR GENERATOR</h1>
-
-    <div class="section">
-        <h2>ОДИНОЧНЫЙ QR</h2>
-        <label>ТИП:</label>
-        <select id="qrType">
-            <option value="LOGIN">LOGIN - Вход игрока</option>
-            <option value="SEND">SEND - Перевод (получатель)</option>
-            <option value="PAY">PAY - Покупка товара</option>
-            <option value="PERK">PERK - Применение перка</option>
-        </select>
-
-        <label>ЗНАЧЕНИЕ (UUID / ID):</label>
-        <input type="text" id="qrValue" placeholder="например: ABC12345 или item_001">
-
-        <button onclick="generateSingle()">[ СОЗДАТЬ QR ]</button>
-
-        <div id="singleOutput" class="qr-output">
-            <canvas id="singleCanvas"></canvas>
-            <div class="qr-text" id="singleText"></div>
-            <button class="download-btn" onclick="downloadSingle()">[ СКАЧАТЬ PNG ]</button>
+    <div id="loginOverlay">
+        <div class="login-box">
+            <h2>ДОСТУП ОГРАНИЧЕН</h2>
+            <label>ПАРОЛЬ:</label>
+            <input type="password" id="adminPassword" placeholder="Введите пароль" onkeydown="if(event.key==='Enter')checkPassword()">
+            <button onclick="checkPassword()">[ ВОЙТИ ]</button>
+            <p class="error-msg" id="loginError">Неверный пароль</p>
         </div>
     </div>
 
-    <div class="section">
-        <h2>ПАКЕТНАЯ ГЕНЕРАЦИЯ</h2>
-        <label>ФОРМАТ: TYPE:VALUE (по одному на строку)</label>
-        <textarea class="batch-area" id="batchInput" placeholder="LOGIN:ABC12345
+    <div id="mainContent">
+        <h1>QR GENERATOR</h1>
+
+        <div class="section">
+            <h2>ОДИНОЧНЫЙ QR</h2>
+            <label>ТИП:</label>
+            <select id="qrType">
+                <option value="LOGIN">LOGIN - Вход игрока</option>
+                <option value="SEND">SEND - Перевод (получатель)</option>
+                <option value="PAY">PAY - Покупка товара</option>
+                <option value="PERK">PERK - Применение перка</option>
+            </select>
+
+            <label>ЗНАЧЕНИЕ (UUID / ID):</label>
+            <input type="text" id="qrValue" placeholder="например: ABC12345 или item_001">
+
+            <button onclick="generateSingle()">[ СОЗДАТЬ QR ]</button>
+
+            <div id="singleOutput" class="qr-output">
+                <canvas id="singleCanvas"></canvas>
+                <div class="qr-text" id="singleText"></div>
+                <button class="download-btn" onclick="downloadSingle()">[ СКАЧАТЬ PNG ]</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>ПАКЕТНАЯ ГЕНЕРАЦИЯ</h2>
+            <label>ФОРМАТ: TYPE:VALUE (по одному на строку)</label>
+            <textarea class="batch-area" id="batchInput" placeholder="LOGIN:ABC12345
 PAY:item_001
 PERK:perk_001
 SEND:XYZ99999"></textarea>
 
-        <button onclick="generateBatch()">[ СОЗДАТЬ ВСЕ ]</button>
-        <button class="download-btn" onclick="downloadAll()">[ СКАЧАТЬ ВСЕ ZIP ]</button>
+            <button onclick="generateBatch()">[ СОЗДАТЬ ВСЕ ]</button>
+            <button class="download-btn" onclick="downloadAll()">[ СКАЧАТЬ ВСЕ ZIP ]</button>
 
-        <div id="batchResults" class="batch-results"></div>
-    </div>
+            <div id="batchResults" class="batch-results"></div>
+        </div>
 
-    <div class="section">
-        <h2>СПРАВКА</h2>
-        <p><strong>LOGIN:UUID</strong> - QR для входа игрока по UUID</p>
-        <p><strong>SEND:UUID</strong> - QR для быстрого перевода (открывает форму с заполненным получателем)</p>
-        <p><strong>PAY:ITEM_ID</strong> - QR для покупки товара</p>
-        <p><strong>PERK:PERK_ID</strong> - QR для применения перка</p>
+        <div class="section">
+            <h2>СПРАВКА</h2>
+            <p><strong>LOGIN:UUID</strong> - QR для входа игрока по UUID</p>
+            <p><strong>SEND:UUID</strong> - QR для быстрого перевода (открывает форму с заполненным получателем)</p>
+            <p><strong>PAY:ITEM_ID</strong> - QR для покупки товара</p>
+            <p><strong>PERK:PERK_ID</strong> - QR для применения перка</p>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
     <script>
         let generatedQRs = [];
+
+        // determine API base URL
+        const API_BASE = window.location.port === '5174'
+            ? 'http://localhost:8001'
+            : window.location.origin;
+
+        async function checkPassword() {
+            const password = document.getElementById('adminPassword').value;
+            const errorEl = document.getElementById('loginError');
+
+            try {
+                const response = await fetch(`${API_BASE}/api/admin/verify`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+
+                if (response.ok) {
+                    document.getElementById('loginOverlay').style.display = 'none';
+                    document.getElementById('mainContent').style.display = 'block';
+                    sessionStorage.setItem('qr_admin_auth', '1');
+                } else {
+                    errorEl.style.display = 'block';
+                }
+            } catch (e) {
+                errorEl.textContent = 'Ошибка соединения';
+                errorEl.style.display = 'block';
+            }
+        }
+
+        // check if already authenticated in this session
+        if (sessionStorage.getItem('qr_admin_auth') === '1') {
+            document.getElementById('loginOverlay').style.display = 'none';
+            document.getElementById('mainContent').style.display = 'block';
+        }
 
         function generateSingle() {
             const type = document.getElementById('qrType').value;
