@@ -1,20 +1,28 @@
 <script>
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onMount } from 'svelte';
   import { auth } from '../stores/auth.js';
   import { api } from '../api.js';
   import QRScanner from './QRScanner.svelte';
 
   const dispatch = createEventDispatcher();
 
-  let step = 'recipient'; // recipient | amount | confirm
-  let recipientUuid = '';
-  let recipient = null;
+  // prefilled recipient from QR scan
+  export let recipient = null;
+
+  let step = recipient ? 'amount' : 'recipient';
+  let recipientUuid = recipient?.player_uuid || '';
   let amount = '';
   let error = '';
   let loading = false;
   let showQRScanner = false;
   let success = false;
   let transferResult = null;
+
+  // if recipient prop changes, update state
+  $: if (recipient) {
+    step = 'amount';
+    recipientUuid = recipient.player_uuid;
+  }
 
   async function lookupRecipient() {
     if (!recipientUuid.trim()) {

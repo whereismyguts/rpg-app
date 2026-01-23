@@ -58,10 +58,10 @@
     <hr class="separator" />
 
     <button
-      class="btn btn-block"
-      on:click={() => dispatch('navigate', 'send')}
+      class="btn btn-block btn-amber"
+      on:click={() => dispatch('scan')}
     >
-      [ SEND CAPS ]
+      [ SCAN QR CODE ]
     </button>
 
     <button

@@ -39,6 +39,15 @@ class SheetsService:
     def get_attributes_sheet(self) -> gspread.Worksheet:
         return self._get_spreadsheet().worksheet("Attributes")
 
+    def get_items_sheet(self) -> gspread.Worksheet:
+        return self._get_spreadsheet().worksheet("Items")
+
+    def get_perks_sheet(self) -> gspread.Worksheet:
+        return self._get_spreadsheet().worksheet("Perks")
+
+    def get_user_perks_sheet(self) -> gspread.Worksheet:
+        return self._get_spreadsheet().worksheet("UserPerks")
+
     def get_user_by_telegram_id(self, user_id: int) -> Optional[dict]:
         sheet = self.get_users_sheet()
         records = sheet.get_all_records()
@@ -193,6 +202,132 @@ class SheetsService:
             "band": user.get("band", ""),
             "attributes": attributes,
         }
+
+
+    # Items methods
+    def get_item_by_id(self, item_id: str) -> Optional[dict]:
+        """Get item by its ID."""
+        try:
+            sheet = self.get_items_sheet()
+            records = sheet.get_all_records()
+            for record in records:
+                if record.get("item_id") == item_id:
+                    return dict(record)
+        except Exception:
+            pass
+        return None
+
+    def get_all_items(self) -> list[dict]:
+        """Get all available items."""
+        try:
+            sheet = self.get_items_sheet()
+            return sheet.get_all_records()
+        except Exception:
+            return []
+
+    # Perks methods
+    def get_perk_by_id(self, perk_id: str) -> Optional[dict]:
+        """Get perk by its ID."""
+        try:
+            sheet = self.get_perks_sheet()
+            records = sheet.get_all_records()
+            for record in records:
+                if record.get("perk_id") == perk_id:
+                    return dict(record)
+        except Exception:
+            pass
+        return None
+
+    def get_all_perks(self) -> list[dict]:
+        """Get all available perks."""
+        try:
+            sheet = self.get_perks_sheet()
+            return sheet.get_all_records()
+        except Exception:
+            return []
+
+    def has_user_perk(self, player_uuid: str, perk_id: str) -> bool:
+        """Check if user already has this perk applied."""
+        try:
+            sheet = self.get_user_perks_sheet()
+            records = sheet.get_all_records()
+            for record in records:
+                if record.get("player_uuid") == player_uuid and record.get("perk_id") == perk_id:
+                    return True
+        except Exception:
+            pass
+        return False
+
+    def apply_perk(self, player_uuid: str, perk_id: str) -> bool:
+        """Apply a perk to user. Returns False if one_time perk already applied."""
+        perk = self.get_perk_by_id(perk_id)
+        if not perk:
+            return False
+
+        # check if one_time perk already applied
+        if perk.get("one_time") and self.has_user_perk(player_uuid, perk_id):
+            return False
+
+        user = self.get_user_by_uuid(player_uuid)
+        if not user:
+            return False
+
+        # apply effect
+        effect_type = perk.get("effect_type", "")
+        effect_value = int(perk.get("effect_value", 0))
+
+        if effect_type.startswith("attr_"):
+            # modify attribute (e.g., attr_strength)
+            attr_name = effect_type[5:]
+            attrs = user.get("attributes", {})
+            attrs[attr_name] = attrs.get(attr_name, 0) + effect_value
+            self._update_user_attributes(player_uuid, attrs)
+        elif effect_type == "balance":
+            new_balance = user["balance"] + effect_value
+            self.update_balance(player_uuid, new_balance)
+
+        # record perk application
+        try:
+            from datetime import datetime
+            sheet = self.get_user_perks_sheet()
+            sheet.append_row([
+                player_uuid,
+                perk_id,
+                datetime.now().isoformat()
+            ], value_input_option="USER_ENTERED")
+        except Exception:
+            pass
+
+        return True
+
+    def _update_user_attributes(self, player_uuid: str, attributes: dict) -> bool:
+        """Update user attributes JSON."""
+        sheet = self.get_users_sheet()
+        try:
+            cell = sheet.find(player_uuid)
+            if cell:
+                # attributes_json is in column G (index 7)
+                sheet.update_cell(cell.row, 7, json.dumps(attributes))
+                return True
+        except Exception:
+            pass
+        return False
+
+    def get_user_perks(self, player_uuid: str) -> list[dict]:
+        """Get all perks applied to user."""
+        try:
+            sheet = self.get_user_perks_sheet()
+            records = sheet.get_all_records()
+            user_perks = []
+            for record in records:
+                if record.get("player_uuid") == player_uuid:
+                    perk = self.get_perk_by_id(record.get("perk_id"))
+                    if perk:
+                        perk["applied_at"] = record.get("applied_at")
+                        user_perks.append(perk)
+            return user_perks
+        except Exception:
+            return []
 
 
 sheets_service = SheetsService()

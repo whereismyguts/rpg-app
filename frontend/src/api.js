@@ -68,6 +68,48 @@ class ApiClient {
       }),
     });
   }
+
+  // QR parsing
+  async parseQR(data) {
+    return this.request('/qr/parse', {
+      method: 'POST',
+      body: JSON.stringify({ data }),
+    });
+  }
+
+  // Items
+  async getItem(itemId) {
+    return this.request(`/items/${itemId}`);
+  }
+
+  async purchaseItem(itemId) {
+    return this.request('/items/purchase', {
+      method: 'POST',
+      body: JSON.stringify({
+        player_uuid: this.playerUuid,
+        item_id: itemId,
+      }),
+    });
+  }
+
+  // Perks
+  async getPerk(perkId) {
+    return this.request(`/perks/${perkId}`);
+  }
+
+  async applyPerk(perkId) {
+    return this.request('/perks/apply', {
+      method: 'POST',
+      body: JSON.stringify({
+        player_uuid: this.playerUuid,
+        perk_id: perkId,
+      }),
+    });
+  }
+
+  async getMyPerks() {
+    return this.request(`/perks/user/${this.playerUuid}`);
+  }
 }
 
 export const api = new ApiClient();

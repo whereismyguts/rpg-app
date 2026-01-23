@@ -12,7 +12,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 
 from config.settings import settings
 from bot.handlers import main_router
-from api import auth, users, transfer
+from api import auth, users, transfer, items, perks, qr
 
 # Setup logging
 logging.basicConfig(
@@ -72,6 +72,9 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(users.router, prefix="/api/users", tags=["users"])
 app.include_router(transfer.router, prefix="/api/transfer", tags=["transfer"])
+app.include_router(items.router, prefix="/api/items", tags=["items"])
+app.include_router(perks.router, prefix="/api/perks", tags=["perks"])
+app.include_router(qr.router, prefix="/api/qr", tags=["qr"])
 
 
 @app.get("/api/health")

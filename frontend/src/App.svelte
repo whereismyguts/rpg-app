@@ -7,18 +7,22 @@
   import Home from './components/Home.svelte';
   import Stats from './components/Stats.svelte';
   import Transfer from './components/Transfer.svelte';
+  import QRScanner from './components/QRScanner.svelte';
+  import PayItem from './components/PayItem.svelte';
+  import ApplyPerk from './components/ApplyPerk.svelte';
 
   let currentPage = 'home';
   let loading = true;
-  let error = '';
+
+  // QR scan result data
+  let scanResult = null;
+  let scanError = '';
 
   onMount(async () => {
-    // Initialize Telegram WebApp if available
     if (window.Telegram?.WebApp) {
       window.Telegram.WebApp.ready();
       window.Telegram.WebApp.expand();
 
-      // Try to login via Telegram initData (synced with bot session)
       if (window.Telegram.WebApp.initData) {
         try {
           const result = await api.login(window.Telegram.WebApp.initData, null, null);
@@ -29,13 +33,11 @@
             return;
           }
         } catch (e) {
-          // Not logged in via bot, show login screen
           console.log('No bot session, showing login');
         }
       }
     }
 
-    // Fallback: restore from localStorage if user previously logged in via QR/UUID
     const savedUuid = auth.restore();
     if (savedUuid) {
       try {
@@ -63,6 +65,47 @@
 
   function navigate(page) {
     currentPage = page;
+    scanResult = null;
+    scanError = '';
+  }
+
+  async function handleQRScan(event) {
+    const qrData = event.detail.data;
+    scanError = '';
+
+    try {
+      const parsed = await api.parseQR(qrData);
+
+      if (parsed.type === 'login') {
+        // login - if not authenticated, log in
+        if (!$auth.isAuthenticated) {
+          const result = await api.login(null, parsed.data.player_uuid, null);
+          api.setPlayerUuid(result.player_uuid);
+          auth.login(result);
+        }
+        currentPage = 'home';
+      } else if (parsed.type === 'pay') {
+        // pay for item
+        scanResult = { type: 'pay', item: parsed.data };
+        currentPage = 'pay';
+      } else if (parsed.type === 'send') {
+        // send money - prefill recipient
+        scanResult = { type: 'send', recipient: parsed.data };
+        currentPage = 'send';
+      } else if (parsed.type === 'perk') {
+        // apply perk
+        scanResult = { type: 'perk', perk: parsed.data };
+        currentPage = 'perk';
+      }
+    } catch (e) {
+      scanError = e.message;
+    }
+  }
+
+  function openScanner() {
+    currentPage = 'scan';
+    scanResult = null;
+    scanError = '';
   }
 </script>
 
@@ -93,21 +136,63 @@
       STATS
     </button>
     <button
-      class="nav-btn"
-      class:active={currentPage === 'send'}
-      on:click={() => navigate('send')}
+      class="nav-btn scan-btn"
+      class:active={currentPage === 'scan'}
+      on:click={openScanner}
     >
-      SEND
+      SCAN
     </button>
   </nav>
 
   <div class="page">
     {#if currentPage === 'home'}
-      <Home on:navigate={(e) => navigate(e.detail)} on:logout={handleLogout} />
+      <Home on:navigate={(e) => navigate(e.detail)} on:logout={handleLogout} on:scan={openScanner} />
     {:else if currentPage === 'stats'}
       <Stats />
+    {:else if currentPage === 'scan'}
+      <div class="terminal">
+        <div class="terminal-header">
+          <h2 class="terminal-title">QR SCANNER</h2>
+          <p class="text-dim">Scan any QR code</p>
+        </div>
+        {#if scanError}
+          <div class="message message-error" style="margin-bottom: 16px;">
+            ERROR: {scanError}
+          </div>
+        {/if}
+        <QRScanner
+          on:scan={handleQRScan}
+          on:cancel={() => navigate('home')}
+        />
+      </div>
     {:else if currentPage === 'send'}
-      <Transfer on:complete={() => navigate('home')} />
+      <Transfer
+        recipient={scanResult?.recipient}
+        on:complete={() => navigate('home')}
+      />
+    {:else if currentPage === 'pay'}
+      <PayItem
+        item={scanResult?.item}
+        on:complete={() => navigate('home')}
+        on:cancel={() => navigate('home')}
+      />
+    {:else if currentPage === 'perk'}
+      <ApplyPerk
+        perk={scanResult?.perk}
+        on:complete={() => navigate('home')}
+        on:cancel={() => navigate('home')}
+      />
     {/if}
   </div>
 {/if}
+
+<style>
+  .scan-btn {
+    background: var(--terminal-amber) !important;
+    color: #000 !important;
+  }
+
+  .scan-btn:hover {
+    background: #ffcc00 !important;
+  }
+</style>

@@ -20,27 +20,54 @@ Telegram Mini App for RPG player accounts with Fallout-style retro UI. Bot is mi
 - **Web App**: Full functionality (login, balance, stats, send caps, QR scanner)
 
 ## Web App Features
+- Universal QR scanner with routing by QR type
 - Login via QR code (camera) or UUID text input
 - View balance and SPECIAL stats
-- Send caps to other players (QR scan or UUID)
+- Send caps to other players
+- Purchase items (scan item QR)
+- Apply perks (scan perk QR)
 - Fallout terminal retro styling
+
+## QR Code Formats
+```
+LOGIN:UUID        # login as user
+PAY:ITEM_ID       # purchase item
+SEND:UUID         # send money to user
+PERK:PERK_ID      # apply perk
+```
+
+## Google Sheet Structure
+
+### Users Sheet
+| user_id | player_uuid | name | profession | balance | band | attributes_json |
+
+### Attributes Sheet
+| attribute_name | display_name | max_value | description |
+
+### Items Sheet
+| item_id | name | description | price | image_url |
+
+### Perks Sheet
+| perk_id | name | description | effect_type | effect_value | one_time |
+
+### UserPerks Sheet
+| player_uuid | perk_id | applied_at |
+
+## Effect Types for Perks
+- `attr_strength`, `attr_perception`, etc. - modify attribute
+- `balance` - add/subtract caps
 
 ## Key Files
 - `backend/main.py` - FastAPI + aiogram entry point
 - `backend/bot/handlers/start.py` - Minimal /start handler
-- `backend/bot/keyboards.py` - WebApp button only
 - `backend/services/sheets.py` - Google Sheets integration
-- `backend/api/` - REST API for web app
-- `frontend/src/App.svelte` - Main app component
-- `frontend/src/components/` - Svelte components
-
-## Google Sheet Structure
-
-### Users Sheet (7 columns)
-| user_id | player_uuid | name | profession | balance | band | attributes_json |
-
-### Attributes Sheet (4 columns)
-| attribute_name | display_name | max_value | description |
+- `backend/api/qr.py` - QR parsing API
+- `backend/api/items.py` - Items purchase API
+- `backend/api/perks.py` - Perks application API
+- `frontend/src/App.svelte` - Main app with QR routing
+- `frontend/src/components/QRScanner.svelte` - Camera scanner
+- `frontend/src/components/PayItem.svelte` - Item purchase
+- `frontend/src/components/ApplyPerk.svelte` - Perk application
 
 ## Local Development
 ```bash
