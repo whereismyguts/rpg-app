@@ -45,8 +45,18 @@
   }
 
   function handleQRScan(event) {
-    playerUuid = event.detail.data;
+    let data = event.detail.data.trim().toUpperCase();
+
+    // parse LOGIN:UUID format
+    if (data.startsWith('LOGIN:')) {
+      data = data.substring(6);
+    }
+
+    playerUuid = data;
     showQRScanner = false;
+
+    // auto-login after scan
+    handleLogin();
   }
 
   function handleKeydown(event) {
