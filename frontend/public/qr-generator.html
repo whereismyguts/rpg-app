@@ -143,7 +143,7 @@
             <h2>ДОСТУП ОГРАНИЧЕН</h2>
             <label>ПАРОЛЬ:</label>
             <input type="password" id="adminPassword" placeholder="Введите пароль" onkeydown="if(event.key==='Enter')checkPassword()">
-            <button onclick="checkPassword()">[ ВОЙТИ ]</button>
+            <button type="button" onclick="checkPassword()">[ ВОЙТИ ]</button>
             <p class="error-msg" id="loginError">Неверный пароль</p>
         </div>
     </div>
@@ -173,12 +173,12 @@
             <label>ИЛИ ВВЕСТИ ВРУЧНУЮ:</label>
             <input type="text" id="qrValue" placeholder="UUID / ID">
 
-            <button onclick="generateSingle()">[ СОЗДАТЬ QR ]</button>
+            <button type="button" onclick="generateSingle()">[ СОЗДАТЬ QR ]</button>
 
             <div id="singleOutput" class="qr-output">
                 <canvas id="singleCanvas"></canvas>
                 <div class="qr-text" id="singleText"></div>
-                <button class="download-btn" onclick="downloadSingle()">[ СКАЧАТЬ PNG ]</button>
+                <button type="button" class="download-btn" onclick="downloadSingle()">[ СКАЧАТЬ PNG ]</button>
             </div>
         </div>
 
@@ -190,8 +190,8 @@ PAY:item_001
 PERK:perk_001
 SEND:XYZ99999"></textarea>
 
-            <button onclick="generateBatch()">[ СОЗДАТЬ ВСЕ ]</button>
-            <button class="download-btn" onclick="downloadAll()">[ СКАЧАТЬ ВСЕ ZIP ]</button>
+            <button type="button" onclick="generateBatch()">[ СОЗДАТЬ ВСЕ ]</button>
+            <button type="button" class="download-btn" onclick="downloadAll()">[ СКАЧАТЬ ВСЕ ZIP ]</button>
 
             <div id="batchResults" class="batch-results"></div>
         </div>
@@ -326,29 +326,44 @@ SEND:XYZ99999"></textarea>
         }
 
         function generateSingle() {
-            const type = document.getElementById('qrType').value;
-            const value = document.getElementById('qrValue').value.trim().toUpperCase();
+            try {
+                const type = document.getElementById('qrType').value;
+                const value = document.getElementById('qrValue').value.trim().toUpperCase();
 
-            if (!value) {
-                alert('Выберите или введите значение');
-                return;
-            }
+                console.log('Generating QR:', type, value);
 
-            const qrData = `${type}:${value}`;
-            const canvas = document.getElementById('singleCanvas');
-
-            QRCode.toCanvas(canvas, qrData, {
-                width: 300,
-                margin: 2,
-                color: { dark: '#000000', light: '#ffffff' }
-            }, function(error) {
-                if (error) {
-                    alert('Ошибка генерации QR');
+                if (!value) {
+                    alert('Выберите или введите значение');
                     return;
                 }
-                document.getElementById('singleOutput').style.display = 'block';
-                document.getElementById('singleText').textContent = qrData;
-            });
+
+                const qrData = `${type}:${value}`;
+                const canvas = document.getElementById('singleCanvas');
+                const output = document.getElementById('singleOutput');
+                const textEl = document.getElementById('singleText');
+
+                if (typeof QRCode === 'undefined') {
+                    alert('QRCode library not loaded');
+                    return;
+                }
+
+                QRCode.toCanvas(canvas, qrData, {
+                    width: 300,
+                    margin: 2,
+                    color: { dark: '#000000', light: '#ffffff' }
+                }, function(error) {
+                    if (error) {
+                        console.error('QR Error:', error);
+                        alert('Ошибка генерации QR: ' + error.message);
+                        return;
+                    }
+                    output.style.display = 'block';
+                    textEl.textContent = qrData;
+                });
+            } catch (e) {
+                console.error('Error:', e);
+                alert('Ошибка: ' + e.message);
+            }
         }
 
         function downloadSingle() {
