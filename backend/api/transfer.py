@@ -47,6 +47,17 @@ async def send_money(request: TransferRequest):
     sheets_service.update_balance(from_uuid, new_sender_balance)
     sheets_service.update_balance(to_uuid, new_receiver_balance)
 
+    # log transaction
+    sheets_service.log_transaction(
+        from_type="player",
+        from_id=from_uuid,
+        to_type="player",
+        to_id=to_uuid,
+        amount=request.amount,
+        tx_type="transfer",
+        description=f"{sender['name']} -> {receiver['name']}"
+    )
+
     return TransferResponse(
         success=True,
         new_balance=new_sender_balance,

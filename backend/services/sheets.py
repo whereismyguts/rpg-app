@@ -48,6 +48,12 @@ class SheetsService:
     def get_user_perks_sheet(self) -> gspread.Worksheet:
         return self._get_spreadsheet().worksheet("UserPerks")
 
+    def get_traders_sheet(self) -> gspread.Worksheet:
+        return self._get_spreadsheet().worksheet("Traders")
+
+    def get_transactions_sheet(self) -> gspread.Worksheet:
+        return self._get_spreadsheet().worksheet("Transactions")
+
     def get_user_by_telegram_id(self, user_id: int) -> Optional[dict]:
         sheet = self.get_users_sheet()
         records = sheet.get_all_records()
@@ -326,6 +332,91 @@ class SheetsService:
                         perk["applied_at"] = record.get("applied_at")
                         user_perks.append(perk)
             return user_perks
+        except Exception:
+            return []
+
+    # Traders methods
+    def get_trader_by_id(self, trader_id: str) -> Optional[dict]:
+        """Get trader by ID."""
+        try:
+            sheet = self.get_traders_sheet()
+            records = sheet.get_all_records()
+            for record in records:
+                if record.get("trader_id") == trader_id:
+                    return dict(record)
+        except Exception:
+            pass
+        return None
+
+    def get_all_traders(self) -> list[dict]:
+        """Get all traders."""
+        try:
+            sheet = self.get_traders_sheet()
+            return sheet.get_all_records()
+        except Exception:
+            return []
+
+    def update_trader_balance(self, trader_id: str, new_balance: int) -> bool:
+        """Update trader balance."""
+        sheet = self.get_traders_sheet()
+        try:
+            cell = sheet.find(trader_id)
+            if cell:
+                # balance is in column C (index 3)
+                sheet.update_cell(cell.row, 3, new_balance)
+                return True
+        except Exception:
+            pass
+        return False
+
+    # Transactions methods
+    def log_transaction(
+        self,
+        from_type: str,  # "player" or "trader" or "system"
+        from_id: str,
+        to_type: str,  # "player" or "trader"
+        to_id: str,
+        amount: int,
+        tx_type: str,  # "transfer", "purchase", "perk"
+        description: str = ""
+    ) -> bool:
+        """Log a transaction."""
+        try:
+            from datetime import datetime
+            sheet = self.get_transactions_sheet()
+            sheet.append_row([
+                datetime.now().isoformat(),
+                from_type,
+                from_id,
+                to_type,
+                to_id,
+                amount,
+                tx_type,
+                description
+            ], value_input_option="USER_ENTERED")
+            return True
+        except Exception:
+            return False
+
+    def get_transactions(self, limit: int = 100) -> list[dict]:
+        """Get recent transactions."""
+        try:
+            sheet = self.get_transactions_sheet()
+            records = sheet.get_all_records()
+            return records[-limit:] if len(records) > limit else records
+        except Exception:
+            return []
+
+    def get_user_transactions(self, player_uuid: str, limit: int = 50) -> list[dict]:
+        """Get transactions for a specific user."""
+        try:
+            sheet = self.get_transactions_sheet()
+            records = sheet.get_all_records()
+            user_txs = [
+                r for r in records
+                if r.get("from_id") == player_uuid or r.get("to_id") == player_uuid
+            ]
+            return user_txs[-limit:] if len(user_txs) > limit else user_txs
         except Exception:
             return []
 

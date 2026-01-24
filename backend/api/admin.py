@@ -49,3 +49,17 @@ async def get_all_perks():
     """Get all perks for admin."""
     perks = sheets_service.get_all_perks()
     return {"perks": perks}
+
+
+@router.get("/traders")
+async def get_all_traders():
+    """Get all traders for admin."""
+    traders = sheets_service.get_all_traders()
+    return {"traders": traders}
+
+
+@router.get("/transactions")
+async def get_transactions(limit: int = 100):
+    """Get recent transactions."""
+    transactions = sheets_service.get_transactions(limit)
+    return {"transactions": transactions}
