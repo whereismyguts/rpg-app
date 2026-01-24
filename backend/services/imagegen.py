@@ -23,7 +23,7 @@ async def generate_image(prompt: str) -> Optional[str]:
                     "Content-Type": "application/json",
                 },
                 json={
-                    "model": "black-forest-labs/flux-schnell",
+                    "model": "black-forest-labs/flux.2-klein-4b",
                     "messages": [
                         {
                             "role": "user",
