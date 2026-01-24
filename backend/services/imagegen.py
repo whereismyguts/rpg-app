@@ -38,21 +38,23 @@ async def generate_image(prompt: str) -> Optional[str]:
 
             if response.status_code == 200:
                 data = response.json()
-                # extract image from response
                 choices = data.get("choices", [])
                 if choices:
                     message = choices[0].get("message", {})
-                    content = message.get("content")
 
-                    # content can be string (data URL) or list
+                    # images are in message.images array
+                    images = message.get("images", [])
+                    if images:
+                        img = images[0]
+                        if isinstance(img, dict):
+                            url = img.get("image_url", {}).get("url")
+                            if url:
+                                return url
+
+                    # fallback: check content
+                    content = message.get("content")
                     if isinstance(content, str) and content.startswith("data:image"):
                         return content
-                    elif isinstance(content, list):
-                        for item in content:
-                            if isinstance(item, dict) and item.get("type") == "image_url":
-                                url = item.get("image_url", {}).get("url")
-                                if url:
-                                    return url
 
             print(f"OpenRouter error response: {response.text}")
             return None
