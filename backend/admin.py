@@ -241,7 +241,7 @@ class TraderAdmin(ModelView, model=Trader):
     name_plural = "Торговцы"
     icon = "fa-solid fa-store"
 
-    column_list = ["id", "trader_id", "name", "balance", "items_count"]
+    column_list = ["id", "trader_id", "name", "balance"]
     column_searchable_list = ["name", "trader_id"]
     column_sortable_list = ["id", "name", "balance"]
 
@@ -250,7 +250,7 @@ class TraderAdmin(ModelView, model=Trader):
         "trader_id": "ID торговца",
         "name": "Имя",
         "balance": "Баланс",
-        "items_count": "Товаров",
+        "items": "Товары",
     }
 
     form_excluded_columns = ["items"]
@@ -266,7 +266,6 @@ class TraderAdmin(ModelView, model=Trader):
 
     column_formatters = {
         "balance": lambda m, a: format_balance(m.balance),
-        "items_count": lambda m, a: len(m.items) if m.items else 0,
     }
 
     async def on_model_change(self, data, model, is_created, request):
