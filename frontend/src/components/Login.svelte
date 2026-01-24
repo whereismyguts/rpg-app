@@ -11,6 +11,8 @@
   let loading = false;
   let passwordEnabled = false;
   let showPasswordInput = false;
+  let scannerKey = 0; // used to force scanner recreation
+  let showError = false;
 
   onMount(async () => {
     try {
@@ -24,11 +26,13 @@
   async function handleLogin() {
     if (!playerUuid.trim()) {
       error = 'Отсканируйте QR код';
+      showError = true;
       return;
     }
 
     loading = true;
     error = '';
+    showError = false;
 
     try {
       const result = await api.login(
@@ -39,6 +43,7 @@
       dispatch('login', result);
     } catch (e) {
       error = e.message;
+      showError = true;
     } finally {
       loading = false;
     }
@@ -53,6 +58,7 @@
     }
 
     playerUuid = data;
+    showError = false;
 
     // if password required, show password input
     if (passwordEnabled) {
@@ -72,10 +78,12 @@
     }
   }
 
-  function handleScannerCancel() {
-    // just reset state
+  function tryScanAgain() {
+    // reset state and increment key to recreate scanner
     playerUuid = '';
     error = '';
+    showError = false;
+    scannerKey++;
   }
 </script>
 
@@ -127,18 +135,24 @@
           {loading ? 'ВХОД...' : 'ВОЙТИ'}
         </button>
       </div>
+    {:else if showError}
+      <div class="error-state">
+        <div class="message message-error">
+          ОШИБКА: {error}
+        </div>
+        <p class="text-dim" style="margin: 16px 0;">ID: {playerUuid}</p>
+        <button class="btn btn-block btn-amber" on:click={tryScanAgain}>
+          [ СКАНИРОВАТЬ СНОВА ]
+        </button>
+      </div>
     {:else}
       <div class="scan-prompt">
         <p>Отсканируйте ваш QR код для входа</p>
       </div>
 
-      {#if error}
-        <div class="message message-error">
-          ОШИБКА: {error}
-        </div>
-      {/if}
-
-      <QRScanner on:scan={handleQRScan} on:cancel={handleScannerCancel} />
+      {#key scannerKey}
+        <QRScanner on:scan={handleQRScan} on:cancel={tryScanAgain} />
+      {/key}
     {/if}
   </div>
 </div>
@@ -155,5 +169,10 @@
     padding: 12px;
     margin-bottom: 16px;
     border: 1px solid var(--terminal-green-dim);
+  }
+
+  .error-state {
+    text-align: center;
+    padding: 20px 0;
   }
 </style>
