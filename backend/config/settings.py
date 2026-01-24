@@ -9,15 +9,18 @@ class Settings(BaseSettings):
     bot_token: str
     webapp_url: str = ""
 
-    # Google Sheets
-    google_sheet_id: str
+    # Database
+    database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/rpg"
+
+    # Google Sheets (for sync/backup)
+    google_sheet_id: str = ""
     google_credentials_json: str = ""
     google_credentials_file: str = ""
 
     # Security
     password_enabled: bool = False
     app_password: str = ""
-    admin_password: str = "admin"  # for qr generator access
+    admin_password: str = "admin"  # for qr generator and admin panel
     secret_key: str = "change-me-in-production"
 
     # OpenRouter for image generation

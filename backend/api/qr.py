@@ -3,7 +3,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from services.sheets import sheets_service
+from services.database import db_service
 
 router = APIRouter()
 
@@ -27,7 +27,7 @@ async def parse_qr(request: QRParseRequest):
 
     if ":" not in data:
         # legacy format - just UUID for login
-        user = sheets_service.get_user_by_uuid(data.upper())
+        user = await db_service.get_user_by_uuid(data.upper())
         if user:
             return {
                 "type": "login",
@@ -40,7 +40,7 @@ async def parse_qr(request: QRParseRequest):
     qr_value = parts[1].strip()
 
     if qr_type == "LOGIN":
-        user = sheets_service.get_user_by_uuid(qr_value.upper())
+        user = await db_service.get_user_by_uuid(qr_value.upper())
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         return {
@@ -52,7 +52,7 @@ async def parse_qr(request: QRParseRequest):
         }
 
     elif qr_type == "PAY":
-        item = sheets_service.get_item_by_id(qr_value)
+        item = await db_service.get_item_by_id(qr_value)
         if not item:
             raise HTTPException(status_code=404, detail="Item not found")
         return {
@@ -61,7 +61,7 @@ async def parse_qr(request: QRParseRequest):
         }
 
     elif qr_type == "SEND":
-        user = sheets_service.get_user_by_uuid(qr_value.upper())
+        user = await db_service.get_user_by_uuid(qr_value.upper())
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         return {
@@ -73,7 +73,7 @@ async def parse_qr(request: QRParseRequest):
         }
 
     elif qr_type == "PERK":
-        perk = sheets_service.get_perk_by_id(qr_value)
+        perk = await db_service.get_perk_by_id(qr_value)
         if not perk:
             raise HTTPException(status_code=404, detail="Perk not found")
         return {

@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from config.settings import settings
-from services.sheets import sheets_service
+from services.database import db_service
 from services.imagegen import generate_image
 
 router = APIRouter()
@@ -25,44 +25,35 @@ async def verify_admin_password(request: VerifyRequest):
 @router.get("/users")
 async def get_all_users():
     """Get all users for admin."""
-    sheet = sheets_service.get_users_sheet()
-    records = sheet.get_all_records()
-    return {
-        "users": [
-            {
-                "player_uuid": r.get("player_uuid"),
-                "name": r.get("name"),
-            }
-            for r in records if r.get("player_uuid")
-        ]
-    }
+    users = await db_service.get_all_users()
+    return {"users": users}
 
 
 @router.get("/items")
 async def get_all_items():
     """Get all items for admin."""
-    items = sheets_service.get_all_items()
+    items = await db_service.get_all_items()
     return {"items": items}
 
 
 @router.get("/perks")
 async def get_all_perks():
     """Get all perks for admin."""
-    perks = sheets_service.get_all_perks()
+    perks = await db_service.get_all_perks()
     return {"perks": perks}
 
 
 @router.get("/traders")
 async def get_all_traders():
     """Get all traders for admin."""
-    traders = sheets_service.get_all_traders()
+    traders = await db_service.get_all_traders()
     return {"traders": traders}
 
 
 @router.get("/transactions")
 async def get_transactions(limit: int = 100):
     """Get recent transactions."""
-    transactions = sheets_service.get_transactions(limit)
+    transactions = await db_service.get_transactions(limit)
     return {"transactions": transactions}
 
 
@@ -74,17 +65,17 @@ class GenerateImageRequest(BaseModel):
 
 @router.post("/generate-image")
 async def generate_entity_image(request: GenerateImageRequest):
-    """Generate image for item or perk and save URL to sheet."""
+    """Generate image for item or perk and save URL to database."""
     if not settings.openrouter_api_key:
         raise HTTPException(status_code=400, detail="OpenRouter API key not configured")
 
     # verify entity exists
     if request.entity_type == "item":
-        entity = sheets_service.get_item_by_id(request.entity_id)
+        entity = await db_service.get_item_by_id(request.entity_id)
         if not entity:
             raise HTTPException(status_code=404, detail="Item not found")
     elif request.entity_type == "perk":
-        entity = sheets_service.get_perk_by_id(request.entity_id)
+        entity = await db_service.get_perk_by_id(request.entity_id)
         if not entity:
             raise HTTPException(status_code=404, detail="Perk not found")
     else:
@@ -95,8 +86,8 @@ async def generate_entity_image(request: GenerateImageRequest):
     if not image_url:
         raise HTTPException(status_code=500, detail="Failed to generate image")
 
-    # save URL to sheet
-    success = sheets_service.update_entity_image(
+    # save URL to database
+    success = await db_service.update_entity_image(
         request.entity_type,
         request.entity_id,
         image_url

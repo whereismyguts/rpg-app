@@ -6,7 +6,7 @@ import hmac
 import urllib.parse
 
 from config.settings import settings
-from services.sheets import sheets_service
+from services.database import db_service
 
 router = APIRouter()
 
@@ -85,11 +85,11 @@ async def login(request: LoginRequest):
 
         user_id = parse_user_from_init_data(parsed_data)
         if user_id:
-            user = sheets_service.get_user_by_telegram_id(user_id)
+            user = await db_service.get_user_by_telegram_id(user_id)
 
     # Option 2: UUID-based login
     elif request.player_uuid:
-        user = sheets_service.get_user_by_uuid(request.player_uuid.upper())
+        user = await db_service.get_user_by_uuid(request.player_uuid.upper())
 
     if not user:
         raise HTTPException(404, "User not found")
@@ -100,7 +100,7 @@ async def login(request: LoginRequest):
             raise HTTPException(401, "Invalid password")
 
     # log login transaction
-    sheets_service.log_transaction(
+    await db_service.log_transaction(
         from_type="system",
         from_id="LOGIN",
         to_type="player",

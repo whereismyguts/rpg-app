@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from services.sheets import sheets_service
+from services.database import db_service
 
 router = APIRouter()
 
@@ -30,8 +30,8 @@ async def send_money(request: TransferRequest):
     if from_uuid == to_uuid:
         raise HTTPException(400, "Cannot send to yourself")
 
-    sender = sheets_service.get_user_by_uuid(from_uuid)
-    receiver = sheets_service.get_user_by_uuid(to_uuid)
+    sender = await db_service.get_user_by_uuid(from_uuid)
+    receiver = await db_service.get_user_by_uuid(to_uuid)
 
     if not sender:
         raise HTTPException(404, "Sender not found")
@@ -44,11 +44,11 @@ async def send_money(request: TransferRequest):
     new_sender_balance = sender["balance"] - request.amount
     new_receiver_balance = receiver["balance"] + request.amount
 
-    sheets_service.update_balance(from_uuid, new_sender_balance)
-    sheets_service.update_balance(to_uuid, new_receiver_balance)
+    await db_service.update_balance(from_uuid, new_sender_balance)
+    await db_service.update_balance(to_uuid, new_receiver_balance)
 
     # log transaction
-    sheets_service.log_transaction(
+    await db_service.log_transaction(
         from_type="player",
         from_id=from_uuid,
         to_type="player",

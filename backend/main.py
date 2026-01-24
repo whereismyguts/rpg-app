@@ -7,12 +7,15 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from starlette.middleware.sessions import SessionMiddleware
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from config.settings import settings
 from bot.handlers import main_router
-from api import auth, users, transfer, items, perks, qr, admin
+from api import auth, users, transfer, items, perks, qr, admin as admin_api
+from models import init_db
+from admin import setup_admin
 
 # Setup logging
 logging.basicConfig(
@@ -38,6 +41,10 @@ async def start_bot():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Initialize database
+    logger.info("Initializing database...")
+    await init_db()
+
     # Start bot polling in background task
     bot_task = asyncio.create_task(start_bot())
     logger.info("Application started")
@@ -59,6 +66,9 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Session middleware for admin panel
+app.add_middleware(SessionMiddleware, secret_key=settings.secret_key)
+
 # CORS
 app.add_middleware(
     CORSMiddleware,
@@ -68,6 +78,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Setup admin panel at /admin
+setup_admin(app)
+
 # API routes
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(users.router, prefix="/api/users", tags=["users"])
@@ -75,7 +88,7 @@ app.include_router(transfer.router, prefix="/api/transfer", tags=["transfer"])
 app.include_router(items.router, prefix="/api/items", tags=["items"])
 app.include_router(perks.router, prefix="/api/perks", tags=["perks"])
 app.include_router(qr.router, prefix="/api/qr", tags=["qr"])
-app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
+app.include_router(admin_api.router, prefix="/api/admin", tags=["admin"])
 
 
 @app.get("/api/health")

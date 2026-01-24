@@ -1,9 +1,8 @@
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import Response
 from pydantic import BaseModel
-from typing import Optional
 
-from services.sheets import sheets_service
+from services.database import db_service
 from services.qr import generate_qr_code, generate_qr_image
 
 router = APIRouter()
@@ -39,7 +38,7 @@ class QRResponse(BaseModel):
 
 @router.get("/me", response_model=UserResponse)
 async def get_current_user(player_uuid: str = Query(...)):
-    user = sheets_service.get_user_by_uuid(player_uuid.upper())
+    user = await db_service.get_user_by_uuid(player_uuid.upper())
     if not user:
         raise HTTPException(404, "User not found")
 
@@ -54,7 +53,7 @@ async def get_current_user(player_uuid: str = Query(...)):
 
 @router.get("/stats", response_model=StatsResponse)
 async def get_user_stats(player_uuid: str = Query(...)):
-    stats = sheets_service.get_user_stats(player_uuid.upper())
+    stats = await db_service.get_user_stats(player_uuid.upper())
     if not stats:
         raise HTTPException(404, "User not found")
 
@@ -64,7 +63,7 @@ async def get_user_stats(player_uuid: str = Query(...)):
 @router.get("/qr")
 async def get_user_qr(player_uuid: str = Query(...), format: str = Query("base64")):
     """Get QR code for player UUID."""
-    user = sheets_service.get_user_by_uuid(player_uuid.upper())
+    user = await db_service.get_user_by_uuid(player_uuid.upper())
     if not user:
         raise HTTPException(404, "User not found")
 
@@ -79,7 +78,7 @@ async def get_user_qr(player_uuid: str = Query(...), format: str = Query("base64
 @router.get("/lookup", response_model=UserResponse)
 async def lookup_user(player_uuid: str = Query(...)):
     """Look up a user by UUID (for transfers)."""
-    user = sheets_service.get_user_by_uuid(player_uuid.upper())
+    user = await db_service.get_user_by_uuid(player_uuid.upper())
     if not user:
         raise HTTPException(404, "User not found")
 
