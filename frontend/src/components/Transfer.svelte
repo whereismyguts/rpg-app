@@ -8,12 +8,11 @@
 
   export let recipient = null;
 
-  let step = recipient ? 'amount' : 'recipient';
+  let step = recipient ? 'amount' : 'scan';
   let recipientUuid = recipient?.player_uuid || '';
   let amount = '';
   let error = '';
   let loading = false;
-  let showQRScanner = false;
   let success = false;
   let transferResult = null;
 
@@ -22,14 +21,14 @@
     recipientUuid = recipient.player_uuid;
   }
 
-  async function lookupRecipient() {
-    if (!recipientUuid.trim()) {
-      error = 'Введите ID получателя';
+  async function lookupRecipient(uuid) {
+    if (!uuid.trim()) {
+      error = 'Отсканируйте QR получателя';
       return;
     }
 
-    const uuid = recipientUuid.trim().toUpperCase();
-    if (uuid === $auth.playerUuid) {
+    const normalizedUuid = uuid.trim().toUpperCase();
+    if (normalizedUuid === $auth.playerUuid) {
       error = 'Нельзя отправить себе';
       return;
     }
@@ -38,7 +37,8 @@
     error = '';
 
     try {
-      recipient = await api.lookupUser(uuid);
+      recipient = await api.lookupUser(normalizedUuid);
+      recipientUuid = normalizedUuid;
       step = 'amount';
     } catch (e) {
       error = 'Получатель не найден';
@@ -77,19 +77,26 @@
   }
 
   function handleQRScan(event) {
-    recipientUuid = event.detail.data;
-    showQRScanner = false;
-    lookupRecipient();
+    let data = event.detail.data.trim().toUpperCase();
+    // parse LOGIN:UUID format
+    if (data.startsWith('LOGIN:')) {
+      data = data.substring(6);
+    }
+    lookupRecipient(data);
   }
 
   function reset() {
-    step = 'recipient';
+    step = 'scan';
     recipientUuid = '';
     recipient = null;
     amount = '';
     error = '';
     success = false;
     transferResult = null;
+  }
+
+  function goBack() {
+    dispatch('complete');
   }
 </script>
 
@@ -112,30 +119,10 @@
     <button class="btn btn-block" on:click={() => dispatch('complete')}>
       [ ГОТОВО ]
     </button>
-  {:else if showQRScanner}
-    <QRScanner
-      on:scan={handleQRScan}
-      on:cancel={() => showQRScanner = false}
-    />
-  {:else if step === 'recipient'}
-    <div class="form-group">
-      <label>ID получателя</label>
-      <input
-        type="text"
-        bind:value={recipientUuid}
-        placeholder="Введите ID"
-        disabled={loading}
-      />
+  {:else if step === 'scan'}
+    <div class="scan-prompt">
+      <p>Отсканируйте QR код получателя</p>
     </div>
-
-    <button
-      class="btn btn-block"
-      style="margin-bottom: 16px;"
-      on:click={() => showQRScanner = true}
-      disabled={loading}
-    >
-      [ СКАНИРОВАТЬ QR ]
-    </button>
 
     {#if error}
       <div class="message message-error">
@@ -143,12 +130,17 @@
       </div>
     {/if}
 
+    <QRScanner
+      on:scan={handleQRScan}
+      on:cancel={goBack}
+    />
+
     <button
-      class="btn btn-block btn-amber"
-      on:click={lookupRecipient}
-      disabled={loading}
+      class="btn btn-block"
+      style="margin-top: 16px;"
+      on:click={goBack}
     >
-      {loading ? 'ПОИСК...' : '[ НАЙТИ ]'}
+      [ НА ГЛАВНУЮ ]
     </button>
   {:else if step === 'amount'}
     <div class="user-info">
@@ -211,3 +203,11 @@
     </div>
   {/if}
 </div>
+
+<style>
+  .scan-prompt {
+    text-align: center;
+    padding: 16px 0;
+    margin-bottom: 16px;
+  }
+</style>

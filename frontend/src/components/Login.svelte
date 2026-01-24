@@ -10,7 +10,7 @@
   let error = '';
   let loading = false;
   let passwordEnabled = false;
-  let showQRScanner = false;
+  let showPasswordInput = false;
 
   onMount(async () => {
     try {
@@ -23,7 +23,7 @@
 
   async function handleLogin() {
     if (!playerUuid.trim()) {
-      error = 'Введите ID игрока';
+      error = 'Отсканируйте QR код';
       return;
     }
 
@@ -53,16 +53,29 @@
     }
 
     playerUuid = data;
-    showQRScanner = false;
 
-    // auto-login after scan
+    // if password required, show password input
+    if (passwordEnabled) {
+      showPasswordInput = true;
+    } else {
+      handleLogin();
+    }
+  }
+
+  function handlePasswordSubmit() {
     handleLogin();
   }
 
   function handleKeydown(event) {
     if (event.key === 'Enter') {
-      handleLogin();
+      handlePasswordSubmit();
     }
+  }
+
+  function handleScannerCancel() {
+    // just reset state
+    playerUuid = '';
+    error = '';
   }
 </script>
 
@@ -73,41 +86,22 @@
       <p class="text-dim">ROBCO INDUSTRIES UNIFIED OPERATING SYSTEM</p>
     </div>
 
-    {#if showQRScanner}
-      <QRScanner on:scan={handleQRScan} on:cancel={() => showQRScanner = false} />
-    {:else}
-      <div class="form-group">
-        <label>ID игрока</label>
-        <input
-          type="text"
-          bind:value={playerUuid}
-          placeholder="Введите ID"
-          on:keydown={handleKeydown}
-          disabled={loading}
-        />
+    {#if showPasswordInput}
+      <div class="scanned-info">
+        <p class="text-dim">ID: {playerUuid}</p>
       </div>
 
-      <button
-        class="btn btn-block"
-        style="margin-bottom: 16px;"
-        on:click={() => showQRScanner = true}
-        disabled={loading}
-      >
-        [ СКАНИРОВАТЬ QR ]
-      </button>
-
-      {#if passwordEnabled}
-        <div class="form-group">
-          <label>Пароль</label>
-          <input
-            type="password"
-            bind:value={password}
-            placeholder="Введите пароль"
-            on:keydown={handleKeydown}
-            disabled={loading}
-          />
-        </div>
-      {/if}
+      <div class="form-group">
+        <label>Пароль</label>
+        <input
+          type="password"
+          bind:value={password}
+          placeholder="Введите пароль"
+          on:keydown={handleKeydown}
+          disabled={loading}
+          autofocus
+        />
+      </div>
 
       {#if error}
         <div class="message message-error">
@@ -115,13 +109,51 @@
         </div>
       {/if}
 
-      <button
-        class="btn btn-block btn-amber"
-        on:click={handleLogin}
-        disabled={loading}
-      >
-        {loading ? 'АВТОРИЗАЦИЯ...' : '[ ВОЙТИ ]'}
-      </button>
+      <div style="display: flex; gap: 12px;">
+        <button
+          class="btn"
+          style="flex: 1;"
+          on:click={() => { showPasswordInput = false; playerUuid = ''; password = ''; }}
+          disabled={loading}
+        >
+          НАЗАД
+        </button>
+        <button
+          class="btn btn-amber"
+          style="flex: 1;"
+          on:click={handlePasswordSubmit}
+          disabled={loading}
+        >
+          {loading ? 'ВХОД...' : 'ВОЙТИ'}
+        </button>
+      </div>
+    {:else}
+      <div class="scan-prompt">
+        <p>Отсканируйте ваш QR код для входа</p>
+      </div>
+
+      {#if error}
+        <div class="message message-error">
+          ОШИБКА: {error}
+        </div>
+      {/if}
+
+      <QRScanner on:scan={handleQRScan} on:cancel={handleScannerCancel} />
     {/if}
   </div>
 </div>
+
+<style>
+  .scan-prompt {
+    text-align: center;
+    padding: 16px 0;
+    margin-bottom: 16px;
+  }
+
+  .scanned-info {
+    text-align: center;
+    padding: 12px;
+    margin-bottom: 16px;
+    border: 1px solid var(--terminal-green-dim);
+  }
+</style>

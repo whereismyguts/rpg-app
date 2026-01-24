@@ -88,8 +88,7 @@
   {/if}
 
   <button
-    class="btn btn-block"
-    style="margin-top: 16px;"
+    class="btn btn-block cancel-btn"
     on:click={handleCancel}
   >
     [ ОТМЕНА ]
@@ -133,5 +132,11 @@
   @keyframes blink {
     0%, 50% { opacity: 1; }
     51%, 100% { opacity: 0; }
+  }
+
+  .cancel-btn {
+    margin-top: 16px;
+    position: relative;
+    z-index: 10;
   }
 </style>

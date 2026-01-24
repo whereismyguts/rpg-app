@@ -47,7 +47,12 @@
       auth.updateBalance(result.new_balance);
       success = true;
     } catch (e) {
-      error = e.message;
+      // handle "already applied" error specifically
+      if (e.message && e.message.toLowerCase().includes('already applied')) {
+        alreadyApplied = true;
+      } else {
+        error = e.message;
+      }
     } finally {
       loading = false;
     }
