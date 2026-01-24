@@ -200,7 +200,8 @@
             </select>
 
             <label>ПРОМПТ ДЛЯ ГЕНЕРАЦИИ:</label>
-            <input type="text" id="imagePrompt" placeholder="post-apocalyptic item, fallout style, ..." />
+            <input type="text" id="imagePrompt" placeholder="оставьте пустым для авто-промпта" />
+            <p class="entity-info" id="promptHint">Пусто = автоматический промпт</p>
 
             <button type="button" onclick="generateEntityImage()" id="genImageBtn">[ СГЕНЕРИРОВАТЬ КАРТИНКУ ]</button>
 
@@ -436,7 +437,7 @@
             const type = document.getElementById('imageEntityType').value;
             const select = document.getElementById('imageEntitySelect');
             const entityId = select.value;
-            const prompt = document.getElementById('imagePrompt').value.trim();
+            let prompt = document.getElementById('imagePrompt').value.trim();
             const btn = document.getElementById('genImageBtn');
             const resultDiv = document.getElementById('imageResult');
             const resultImg = document.getElementById('generatedImage');
@@ -445,9 +446,16 @@
                 alert('Выберите товар или перк');
                 return;
             }
+
+            // generate default prompt if empty
             if (!prompt) {
-                alert('Введите промпт для генерации');
-                return;
+                const selected = select.options[select.selectedIndex];
+                const entityName = selected.dataset.name || selected.textContent;
+                if (type === 'perk') {
+                    prompt = `vault-boy character doing action that represents "${entityName}", fallout style pip-boy illustration, green lines on black background, simple clean icon, 256x256`;
+                } else {
+                    prompt = `simple icon of "${entityName}", green outline on black background, minimalist, post-apocalyptic style, 256x256`;
+                }
             }
 
             btn.disabled = true;

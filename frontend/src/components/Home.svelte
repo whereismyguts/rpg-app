@@ -2,14 +2,16 @@
   import { createEventDispatcher, onMount } from 'svelte';
   import { auth } from '../stores/auth.js';
   import { api } from '../api.js';
+  import AttributeBar from './ui/AttributeBar.svelte';
 
   const dispatch = createEventDispatcher();
 
   let loading = true;
   let error = '';
   let qrBase64 = '';
-  let showQR = false;
   let userPerks = [];
+  let stats = null;
+  let expandedPerk = null;
 
   onMount(async () => {
     await refreshData();
@@ -22,8 +24,15 @@
       const user = await api.getMe();
       auth.updateBalance(user.balance);
 
-      const perksResult = await api.getMyPerks();
+      const [perksResult, statsResult, qrResult] = await Promise.all([
+        api.getMyPerks(),
+        api.getStats(),
+        api.getQR()
+      ]);
+
       userPerks = perksResult.perks || [];
+      stats = statsResult;
+      qrBase64 = qrResult.qr_base64;
     } catch (e) {
       error = e.message;
     } finally {
@@ -31,13 +40,11 @@
     }
   }
 
-  async function loadQR() {
-    try {
-      const result = await api.getQR();
-      qrBase64 = result.qr_base64;
-      showQR = true;
-    } catch (e) {
-      error = 'Не удалось загрузить QR код';
+  function togglePerk(perkId) {
+    if (expandedPerk === perkId) {
+      expandedPerk = null;
+    } else {
+      expandedPerk = perkId;
     }
   }
 </script>
@@ -68,54 +75,53 @@
       [ СКАНИРОВАТЬ QR ]
     </button>
 
-    <button
-      class="btn btn-block"
-      style="margin-top: 12px;"
-      on:click={() => dispatch('navigate', 'stats')}
-    >
-      [ ХАРАКТЕРИСТИКИ ]
-    </button>
-
-    <button
-      class="btn btn-block"
-      style="margin-top: 12px;"
-      on:click={loadQR}
-    >
-      [ МОЙ QR КОД ]
-    </button>
-
-    {#if showQR && qrBase64}
-      <div class="qr-container">
-        <img
-          class="qr-image"
-          src="data:image/png;base64,{qrBase64}"
-          alt="QR код игрока"
-        />
-        <p class="text-dim" style="margin-top: 12px;">
-          Покажите для получения крышек
-        </p>
-        <button
-          class="btn"
-          style="margin-top: 12px;"
-          on:click={() => showQR = false}
-        >
-          СКРЫТЬ
-        </button>
+    {#if stats && stats.attributes && stats.attributes.length > 0}
+      <hr class="separator" />
+      <div class="stats-section">
+        <p class="section-title">S.P.E.C.I.A.L.</p>
+        {#if stats.profession}
+          <p class="text-dim stats-info">Профессия: {stats.profession}</p>
+        {/if}
+        {#if stats.band}
+          <p class="text-dim stats-info">Группировка: {stats.band}</p>
+        {/if}
+        <div class="attributes-list">
+          {#each stats.attributes as attr}
+            <AttributeBar
+              name={attr.display_name}
+              value={attr.value}
+              max={attr.max_value}
+              description={attr.description}
+            />
+          {/each}
+        </div>
       </div>
     {/if}
 
     {#if userPerks.length > 0}
       <hr class="separator" />
       <div class="perks-section">
-        <p class="text-dim" style="margin-bottom: 8px;">АКТИВНЫЕ ПЕРКИ</p>
+        <p class="section-title">АКТИВНЫЕ ПЕРКИ</p>
         <div class="perks-list">
           {#each userPerks as perk}
-            <div class="perk-badge">
-              {#if perk.image_url}
-                <img src={perk.image_url} alt={perk.name} class="perk-image" />
+            <button
+              class="perk-item"
+              class:expanded={expandedPerk === perk.perk_id}
+              on:click={() => togglePerk(perk.perk_id)}
+            >
+              <div class="perk-header">
+                {#if perk.image_url}
+                  <img src={perk.image_url} alt={perk.name} class="perk-image" />
+                {/if}
+                <span class="perk-name">{perk.name}</span>
+                <span class="perk-arrow">{expandedPerk === perk.perk_id ? '▼' : '▶'}</span>
+              </div>
+              {#if expandedPerk === perk.perk_id && perk.description}
+                <div class="perk-description">
+                  {perk.description}
+                </div>
               {/if}
-              <span class="perk-name">{perk.name}</span>
-            </div>
+            </button>
           {/each}
         </div>
       </div>
@@ -142,33 +148,124 @@
     >
       [ ВЫЙТИ ]
     </button>
+
+    {#if qrBase64}
+      <hr class="separator" />
+      <div class="qr-section">
+        <p class="text-dim qr-hint">ВАШ QR ДЛЯ ПОЛУЧЕНИЯ КРЫШЕК</p>
+        <img
+          class="qr-image"
+          src="data:image/png;base64,{qrBase64}"
+          alt="QR код игрока"
+        />
+      </div>
+    {/if}
   {/if}
 </div>
 
 <style>
+  .section-title {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--terminal-amber);
+    margin-bottom: 12px;
+    text-align: center;
+  }
+
+  .stats-section {
+    margin-top: 16px;
+  }
+
+  .stats-info {
+    text-align: center;
+    margin-bottom: 8px;
+    font-size: 0.85rem;
+  }
+
+  .attributes-list {
+    margin-top: 12px;
+  }
+
   .perks-section {
     margin-top: 16px;
   }
+
   .perks-list {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
     gap: 8px;
   }
-  .perk-badge {
+
+  .perk-item {
+    display: block;
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--terminal-green-dim);
+    background: rgba(20, 255, 0, 0.05);
+    cursor: pointer;
+    text-align: left;
+    font-family: 'Courier New', Courier, monospace;
+    color: var(--terminal-green);
+    transition: all 0.2s ease;
+  }
+
+  .perk-item:hover {
+    background: rgba(20, 255, 0, 0.1);
+    border-color: var(--terminal-green);
+  }
+
+  .perk-item.expanded {
+    border-color: var(--terminal-amber);
+    background: rgba(255, 176, 0, 0.1);
+  }
+
+  .perk-header {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 10px;
-    border: 1px solid var(--terminal-green-dim);
-    background: rgba(20, 255, 0, 0.1);
-    font-size: 12px;
+    gap: 10px;
   }
+
   .perk-image {
-    width: 24px;
-    height: 24px;
+    width: 32px;
+    height: 32px;
     object-fit: cover;
+    border: 1px solid var(--terminal-green-dim);
   }
+
   .perk-name {
-    color: var(--terminal-green);
+    flex: 1;
+    font-size: 0.95rem;
+  }
+
+  .perk-arrow {
+    font-size: 0.8rem;
+    color: var(--terminal-green-dim);
+  }
+
+  .perk-description {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--terminal-green-dim);
+    font-size: 0.85rem;
+    color: var(--terminal-green-dim);
+    line-height: 1.5;
+  }
+
+  .qr-section {
+    text-align: center;
+    padding: 16px 0;
+    margin-top: 16px;
+  }
+
+  .qr-hint {
+    font-size: 0.8rem;
+    margin-bottom: 12px;
+    letter-spacing: 1px;
+  }
+
+  .qr-image {
+    max-width: 160px;
+    border: 2px solid var(--terminal-green);
   }
 </style>

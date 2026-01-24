@@ -5,7 +5,6 @@
 
   import Login from './components/Login.svelte';
   import Home from './components/Home.svelte';
-  import Stats from './components/Stats.svelte';
   import Transfer from './components/Transfer.svelte';
   import QRScanner from './components/QRScanner.svelte';
   import PayItem from './components/PayItem.svelte';
@@ -127,35 +126,9 @@
 {:else if !$auth.isAuthenticated}
   <Login on:login={handleLogin} />
 {:else}
-  <nav class="nav">
-    <button
-      class="nav-btn"
-      class:active={currentPage === 'home'}
-      on:click={() => navigate('home')}
-    >
-      ГЛАВНАЯ
-    </button>
-    <button
-      class="nav-btn"
-      class:active={currentPage === 'stats'}
-      on:click={() => navigate('stats')}
-    >
-      СТАТЫ
-    </button>
-    <button
-      class="nav-btn scan-btn"
-      class:active={currentPage === 'scan'}
-      on:click={openScanner}
-    >
-      СКАН
-    </button>
-  </nav>
-
   <div class="page">
     {#if currentPage === 'home'}
-      <Home on:navigate={(e) => navigate(e.detail)} on:logout={handleLogout} on:scan={openScanner} />
-    {:else if currentPage === 'stats'}
-      <Stats />
+      <Home on:logout={handleLogout} on:scan={openScanner} />
     {:else if currentPage === 'scan'}
       <div class="terminal">
         <div class="terminal-header">
@@ -193,13 +166,3 @@
   </div>
 {/if}
 
-<style>
-  .scan-btn {
-    background: var(--terminal-amber) !important;
-    color: #000 !important;
-  }
-
-  .scan-btn:hover {
-    background: #ffcc00 !important;
-  }
-</style>
