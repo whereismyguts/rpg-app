@@ -77,13 +77,20 @@
       const parsed = await api.parseQR(qrData);
 
       if (parsed.type === 'login') {
-        // login - if not authenticated, log in
-        if (!$auth.isAuthenticated) {
+        // if already authenticated and scanning another user's QR - treat as SEND
+        if ($auth.isAuthenticated && parsed.data.player_uuid !== $auth.playerUuid) {
+          scanResult = { type: 'send', recipient: parsed.data };
+          currentPage = 'send';
+        } else if (!$auth.isAuthenticated) {
+          // not authenticated - log in
           const result = await api.login(null, parsed.data.player_uuid, null);
           api.setPlayerUuid(result.player_uuid);
           auth.login(result);
+          currentPage = 'home';
+        } else {
+          // scanning own QR - just go home
+          currentPage = 'home';
         }
-        currentPage = 'home';
       } else if (parsed.type === 'pay') {
         // pay for item
         scanResult = { type: 'pay', item: parsed.data };
