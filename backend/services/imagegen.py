@@ -1,9 +1,28 @@
 """Image generation service using OpenRouter."""
 
 import httpx
+import base64
 from typing import Optional
 
 from config.settings import settings
+
+
+async def upload_to_catbox(image_data: bytes) -> Optional[str]:
+    """Upload image to catbox.moe and return URL."""
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(
+                "https://catbox.moe/user/api.php",
+                data={"reqtype": "fileupload"},
+                files={"fileToUpload": ("image.png", image_data, "image/png")}
+            )
+            if response.status_code == 200:
+                url = response.text.strip()
+                if url.startswith("https://"):
+                    return url
+    except Exception as e:
+        print(f"Catbox upload error: {e}")
+    return None
 
 
 async def generate_image(prompt: str) -> Optional[str]:
@@ -44,17 +63,27 @@ async def generate_image(prompt: str) -> Optional[str]:
 
                     # images are in message.images array
                     images = message.get("images", [])
+                    data_url = None
+
                     if images:
                         img = images[0]
                         if isinstance(img, dict):
-                            url = img.get("image_url", {}).get("url")
-                            if url:
-                                return url
+                            data_url = img.get("image_url", {}).get("url")
 
                     # fallback: check content
-                    content = message.get("content")
-                    if isinstance(content, str) and content.startswith("data:image"):
-                        return content
+                    if not data_url:
+                        content = message.get("content")
+                        if isinstance(content, str) and content.startswith("data:image"):
+                            data_url = content
+
+                    # upload base64 to catbox
+                    if data_url and data_url.startswith("data:image"):
+                        # extract base64 data
+                        base64_data = data_url.split(",", 1)[1] if "," in data_url else data_url
+                        image_bytes = base64.b64decode(base64_data)
+                        hosted_url = await upload_to_catbox(image_bytes)
+                        if hosted_url:
+                            return hosted_url
 
             print(f"OpenRouter error response: {response.text}")
             return None
