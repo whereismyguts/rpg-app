@@ -99,6 +99,17 @@ async def login(request: LoginRequest):
         if not request.password or request.password != settings.app_password:
             raise HTTPException(401, "Invalid password")
 
+    # log login transaction
+    sheets_service.log_transaction(
+        from_type="system",
+        from_id="LOGIN",
+        to_type="player",
+        to_id=user["player_uuid"],
+        amount=0,
+        tx_type="login",
+        description=f"Вход: {user['name']}"
+    )
+
     return LoginResponse(
         player_uuid=user["player_uuid"],
         name=user["name"],

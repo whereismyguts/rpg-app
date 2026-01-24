@@ -49,6 +49,9 @@
     </button>
   {:else if item}
     <div class="item-card">
+      {#if item.image_url}
+        <img src={item.image_url} alt={item.name} class="item-image" />
+      {/if}
       <h3 class="item-name">{item.name}</h3>
       {#if item.description}
         <p class="item-description">{item.description}</p>
@@ -101,6 +104,15 @@
     border: 1px solid var(--terminal-green);
     padding: 16px;
     margin-bottom: 16px;
+    text-align: center;
+  }
+
+  .item-image {
+    max-width: 200px;
+    max-height: 200px;
+    object-fit: contain;
+    margin-bottom: 12px;
+    border: 1px solid var(--terminal-green-dim);
   }
 
   .item-name {

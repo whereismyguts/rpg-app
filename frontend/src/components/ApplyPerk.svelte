@@ -72,6 +72,9 @@
     </button>
   {:else if perk}
     <div class="perk-card">
+      {#if perk.image_url}
+        <img src={perk.image_url} alt={perk.name} class="perk-image" />
+      {/if}
       <h3 class="perk-name">{perk.name}</h3>
       {#if perk.description}
         <p class="perk-description">{perk.description}</p>
@@ -125,6 +128,15 @@
     border: 1px solid var(--terminal-green);
     padding: 16px;
     margin-bottom: 16px;
+    text-align: center;
+  }
+
+  .perk-image {
+    max-width: 200px;
+    max-height: 200px;
+    object-fit: contain;
+    margin-bottom: 12px;
+    border: 1px solid var(--terminal-green-dim);
   }
 
   .perk-name {

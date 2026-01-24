@@ -59,6 +59,17 @@ async def apply_perk(request: ApplyPerkRequest):
     if not success:
         raise HTTPException(status_code=500, detail="Failed to apply perk")
 
+    # log perk transaction
+    sheets_service.log_transaction(
+        from_type="system",
+        from_id="PERK",
+        to_type="player",
+        to_id=request.player_uuid,
+        amount=0,
+        tx_type="perk",
+        description=f"Перк: {perk.get('name', request.perk_id)}"
+    )
+
     # get updated user stats
     updated_user = sheets_service.get_user_by_uuid(request.player_uuid)
 

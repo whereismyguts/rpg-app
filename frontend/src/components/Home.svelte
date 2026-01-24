@@ -9,6 +9,7 @@
   let error = '';
   let qrBase64 = '';
   let showQR = false;
+  let userPerks = [];
 
   onMount(async () => {
     await refreshData();
@@ -20,6 +21,9 @@
     try {
       const user = await api.getMe();
       auth.updateBalance(user.balance);
+
+      const perksResult = await api.getMyPerks();
+      userPerks = perksResult.perks || [];
     } catch (e) {
       error = e.message;
     } finally {
@@ -100,6 +104,23 @@
       </div>
     {/if}
 
+    {#if userPerks.length > 0}
+      <hr class="separator" />
+      <div class="perks-section">
+        <p class="text-dim" style="margin-bottom: 8px;">АКТИВНЫЕ ПЕРКИ</p>
+        <div class="perks-list">
+          {#each userPerks as perk}
+            <div class="perk-badge">
+              {#if perk.image_url}
+                <img src={perk.image_url} alt={perk.name} class="perk-image" />
+              {/if}
+              <span class="perk-name">{perk.name}</span>
+            </div>
+          {/each}
+        </div>
+      </div>
+    {/if}
+
     {#if error}
       <div class="message message-error">
         ОШИБКА: {error}
@@ -123,3 +144,31 @@
     </button>
   {/if}
 </div>
+
+<style>
+  .perks-section {
+    margin-top: 16px;
+  }
+  .perks-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .perk-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border: 1px solid var(--terminal-green-dim);
+    background: rgba(20, 255, 0, 0.1);
+    font-size: 12px;
+  }
+  .perk-image {
+    width: 24px;
+    height: 24px;
+    object-fit: cover;
+  }
+  .perk-name {
+    color: var(--terminal-green);
+  }
+</style>
