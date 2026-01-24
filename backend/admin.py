@@ -96,11 +96,16 @@ class TransactionAdmin(ModelView, model=Transaction):
 def setup_admin(app):
     """Setup SQLAdmin with all models."""
     authentication_backend = AdminAuth(secret_key=settings.secret_key)
+
+    # use webapp_url as base if set (for HTTPS)
+    base_url = settings.webapp_url.rstrip('/') if settings.webapp_url else None
+
     admin = Admin(
         app,
         sync_engine,
         authentication_backend=authentication_backend,
         title="RPG Admin",
+        base_url="/admin",
     )
 
     admin.add_view(UserAdmin)
