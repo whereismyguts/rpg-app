@@ -4,10 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QR Generator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; }
         body {
-            font-family: 'Courier New', Courier, monospace;
+            font-family: 'Share Tech Mono', monospace;
             background: #0a0a0a;
             color: #14ff00;
             padding: 20px;
@@ -200,8 +203,8 @@
             </select>
 
             <label>ПРОМПТ ДЛЯ ГЕНЕРАЦИИ:</label>
-            <input type="text" id="imagePrompt" placeholder="оставьте пустым для авто-промпта" />
-            <p class="entity-info" id="promptHint">Пусто = автоматический промпт</p>
+            <input type="text" id="imagePrompt" placeholder="describe item in English for best results" />
+            <p class="entity-info" id="promptHint">Лучше писать на английском. Пусто = авто-промпт</p>
 
             <button type="button" onclick="generateEntityImage()" id="genImageBtn">[ СГЕНЕРИРОВАТЬ КАРТИНКУ ]</button>
 
@@ -451,10 +454,12 @@
             if (!prompt) {
                 const selected = select.options[select.selectedIndex];
                 const entityName = selected.dataset.name || selected.textContent;
+                const entityDesc = selected.dataset.desc || '';
                 if (type === 'perk') {
-                    prompt = `retro cartoon mascot character in 1950s style doing action that represents "${entityName}", simple pip-boy terminal illustration, green neon lines on pure black background, clean icon, 256x256`;
+                    prompt = `1950s retro cartoon mascot character, stylized pip-boy style illustration showing ability or skill concept, green neon glow lines on solid black background, no text, simple clean vector icon, game UI element`;
                 } else {
-                    prompt = `simple icon of "${entityName}", green neon outline on pure black background, minimalist retro style, clean lines, 256x256`;
+                    // item icon - describe what it should look like, not the name
+                    prompt = `1950s retro style game item icon, ${entityDesc || 'consumable item'}, glowing green neon outline on solid black background, no text no letters no words, simple clean vector illustration, pip-boy terminal style`;
                 }
             }
 
