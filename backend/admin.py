@@ -27,64 +27,64 @@ class AdminAuth(AuthenticationBackend):
 
 
 class UserAdmin(ModelView, model=User):
-    column_list = [User.id, User.player_uuid, User.name, User.telegram_id, User.balance, User.profession, User.band]
-    column_searchable_list = [User.name, User.player_uuid]
-    column_sortable_list = [User.id, User.name, User.balance]
-    column_default_sort = [(User.id, True)]
-    form_excluded_columns = [User.user_perks, User.created_at]
+    column_list = ["id", "player_uuid", "name", "telegram_id", "balance", "profession", "band"]
+    column_searchable_list = ["name", "player_uuid"]
+    column_sortable_list = ["id", "name", "balance"]
+    column_default_sort = [("id", True)]
+    form_excluded_columns = ["user_perks", "created_at"]
     name = "User"
     name_plural = "Users"
     icon = "fa-solid fa-user"
 
 
 class AttributeAdmin(ModelView, model=Attribute):
-    column_list = [Attribute.id, Attribute.attribute_name, Attribute.display_name, Attribute.max_value]
-    column_searchable_list = [Attribute.attribute_name, Attribute.display_name]
+    column_list = ["id", "attribute_name", "display_name", "max_value"]
+    column_searchable_list = ["attribute_name", "display_name"]
     name = "Attribute"
     name_plural = "Attributes"
     icon = "fa-solid fa-chart-bar"
 
 
 class ItemAdmin(ModelView, model=Item):
-    column_list = [Item.id, Item.item_id, Item.name, Item.price, Item.trader, Item.image_url]
-    column_searchable_list = [Item.name, Item.item_id]
-    column_sortable_list = [Item.id, Item.name, Item.price]
+    column_list = ["id", "item_id", "name", "price", "trader", "image_url"]
+    column_searchable_list = ["name", "item_id"]
+    column_sortable_list = ["id", "name", "price"]
     name = "Item"
     name_plural = "Items"
     icon = "fa-solid fa-box"
 
 
 class PerkAdmin(ModelView, model=Perk):
-    column_list = [Perk.id, Perk.perk_id, Perk.name, Perk.one_time, Perk.effect_type, Perk.effect_value, Perk.image_url]
-    column_searchable_list = [Perk.name, Perk.perk_id]
-    form_excluded_columns = [Perk.user_perks]
+    column_list = ["id", "perk_id", "name", "one_time", "effect_type", "effect_value", "image_url"]
+    column_searchable_list = ["name", "perk_id"]
+    form_excluded_columns = ["user_perks"]
     name = "Perk"
     name_plural = "Perks"
     icon = "fa-solid fa-star"
 
 
 class UserPerkAdmin(ModelView, model=UserPerk):
-    column_list = [UserPerk.id, UserPerk.user, UserPerk.perk, UserPerk.applied_at]
-    column_sortable_list = [UserPerk.id, UserPerk.applied_at]
-    column_default_sort = [(UserPerk.applied_at, True)]
+    column_list = ["id", "user", "perk", "applied_at"]
+    column_sortable_list = ["id", "applied_at"]
+    column_default_sort = [("applied_at", True)]
     name = "User Perk"
     name_plural = "User Perks"
     icon = "fa-solid fa-user-plus"
 
 
 class TraderAdmin(ModelView, model=Trader):
-    column_list = [Trader.id, Trader.trader_id, Trader.name, Trader.balance]
-    column_searchable_list = [Trader.name, Trader.trader_id]
-    form_excluded_columns = [Trader.items]
+    column_list = ["id", "trader_id", "name", "balance"]
+    column_searchable_list = ["name", "trader_id"]
+    form_excluded_columns = ["items"]
     name = "Trader"
     name_plural = "Traders"
     icon = "fa-solid fa-store"
 
 
 class TransactionAdmin(ModelView, model=Transaction):
-    column_list = [Transaction.id, Transaction.timestamp, Transaction.tx_type, Transaction.from_type, Transaction.from_id, Transaction.to_type, Transaction.to_id, Transaction.amount]
-    column_sortable_list = [Transaction.id, Transaction.timestamp, Transaction.amount]
-    column_default_sort = [(Transaction.timestamp, True)]
+    column_list = ["id", "timestamp", "tx_type", "from_type", "from_id", "to_type", "to_id", "amount"]
+    column_sortable_list = ["id", "timestamp", "amount"]
+    column_default_sort = [("timestamp", True)]
     can_create = False
     can_edit = False
     can_delete = False
@@ -96,9 +96,6 @@ class TransactionAdmin(ModelView, model=Transaction):
 def setup_admin(app):
     """Setup SQLAdmin with all models."""
     authentication_backend = AdminAuth(secret_key=settings.secret_key)
-
-    # use webapp_url as base if set (for HTTPS)
-    base_url = settings.webapp_url.rstrip('/') if settings.webapp_url else None
 
     admin = Admin(
         app,
