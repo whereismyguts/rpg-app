@@ -11,15 +11,27 @@ class Base(DeclarativeBase):
     pass
 
 
+def get_async_url(url: str) -> str:
+    """Convert database URL to async format."""
+    if url.startswith("postgresql://"):
+        return url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    return url
+
+
+def get_sync_url(url: str) -> str:
+    """Convert database URL to sync format."""
+    if url.startswith("postgresql+asyncpg://"):
+        return url.replace("postgresql+asyncpg://", "postgresql://", 1)
+    return url
+
+
 # async engine for API operations
-engine = create_async_engine(
-    settings.database_url,
-    echo=settings.log_level == "DEBUG",
-)
+async_url = get_async_url(settings.database_url)
+engine = create_async_engine(async_url, echo=settings.log_level == "DEBUG")
 
 # sync engine for SQLAdmin
-sync_database_url = settings.database_url.replace("postgresql+asyncpg://", "postgresql://")
-sync_engine = create_engine(sync_database_url, echo=settings.log_level == "DEBUG")
+sync_url = get_sync_url(settings.database_url)
+sync_engine = create_engine(sync_url, echo=settings.log_level == "DEBUG")
 
 async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
