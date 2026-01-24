@@ -420,5 +420,39 @@ class SheetsService:
         except Exception:
             return []
 
+    def update_entity_image(self, entity_type: str, entity_id: str, image_url: str) -> bool:
+        """Update image_url for item or perk."""
+        try:
+            if entity_type == "item":
+                sheet = self.get_items_sheet()
+                id_col = "item_id"
+            elif entity_type == "perk":
+                sheet = self.get_perks_sheet()
+                id_col = "perk_id"
+            else:
+                return False
+
+            headers = sheet.row_values(1)
+
+            # ensure image_url column exists
+            if "image_url" not in headers:
+                col = len(headers) + 1
+                sheet.update_cell(1, col, "image_url")
+                headers.append("image_url")
+
+            image_col = headers.index("image_url") + 1
+
+            # find entity row
+            records = sheet.get_all_records()
+            for i, record in enumerate(records):
+                if record.get(id_col) == entity_id:
+                    sheet.update_cell(i + 2, image_col, image_url)
+                    return True
+
+            return False
+        except Exception as e:
+            print(f"Update image error: {e}")
+            return False
+
 
 sheets_service = SheetsService()

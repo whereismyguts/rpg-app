@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     admin_password: str = "admin"  # for qr generator access
     secret_key: str = "change-me-in-production"
 
+    # OpenRouter for image generation
+    openrouter_api_key: str = ""
+
     # App
     log_level: str = "INFO"
 
