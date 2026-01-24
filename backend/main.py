@@ -112,6 +112,11 @@ if static_path.exists():
     @app.get("/{path:path}")
     async def serve_frontend(path: str):
         """Serve frontend SPA."""
+        # don't intercept admin panel
+        if path.startswith("admin"):
+            from fastapi import HTTPException
+            raise HTTPException(status_code=404)
+
         file_path = static_path / path
         if file_path.exists() and file_path.is_file():
             return FileResponse(file_path)
