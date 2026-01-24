@@ -183,18 +183,6 @@
             </div>
         </div>
 
-        <div class="section">
-            <h2>ПАКЕТНАЯ ГЕНЕРАЦИЯ</h2>
-            <label>ФОРМАТ: TYPE:VALUE (по одному на строку)</label>
-            <textarea class="batch-area" id="batchInput" placeholder="LOGIN:ABC12345
-PAY:item_001
-PERK:perk_001
-SEND:XYZ99999"></textarea>
-
-            <button type="button" onclick="generateBatch()">[ СОЗДАТЬ ВСЕ ]</button>
-
-            <div id="batchResults" class="batch-results"></div>
-        </div>
 
         <div class="section">
             <h2>ГЕНЕРАЦИЯ КАРТИНОК</h2>
@@ -222,13 +210,6 @@ SEND:XYZ99999"></textarea>
             </div>
         </div>
 
-        <div class="section">
-            <h2>СПРАВКА</h2>
-            <p><strong>LOGIN:UUID</strong> - QR для входа игрока</p>
-            <p><strong>SEND:UUID</strong> - QR для перевода (получатель)</p>
-            <p><strong>PAY:ITEM_ID</strong> - QR для покупки товара</p>
-            <p><strong>PERK:PERK_ID</strong> - QR для применения перка</p>
-        </div>
     </div>
 
     <script>
