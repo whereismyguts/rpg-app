@@ -1,8 +1,12 @@
-"""SQLAdmin panel configuration."""
+"""SQLAdmin panel configuration with enhanced UX."""
 
+import uuid
+from markupsafe import Markup
 from sqladmin import Admin, ModelView
 from sqladmin.authentication import AuthenticationBackend
 from starlette.requests import Request
+from wtforms import TextAreaField
+from wtforms.validators import Optional
 
 from config.settings import settings
 from models import User, Attribute, Item, Perk, UserPerk, Trader, Transaction
@@ -26,71 +30,286 @@ class AdminAuth(AuthenticationBackend):
         return request.session.get("authenticated", False)
 
 
+def generate_uuid():
+    """Generate 8-char uppercase UUID."""
+    return str(uuid.uuid4())[:8].upper()
+
+
+def format_image(url):
+    """Format image URL as thumbnail."""
+    if url:
+        return Markup(f'<img src="{url}" style="max-width:60px;max-height:60px;border-radius:4px;" />')
+    return "-"
+
+
+def format_qr(entity_type, entity_id):
+    """Format QR code image."""
+    if entity_id:
+        qr_data = f"{entity_type}:{entity_id}"
+        qr_url = f"https://api.qrserver.com/v1/create-qr-code/?size=80x80&data={qr_data}"
+        return Markup(f'<img src="{qr_url}" style="width:60px;height:60px;" title="{qr_data}" />')
+    return "-"
+
+
+def format_balance(value):
+    """Format balance with caps icon."""
+    return Markup(f'<strong>{value}</strong> 🧢')
+
+
 class UserAdmin(ModelView, model=User):
-    column_list = ["id", "player_uuid", "name", "telegram_id", "balance", "profession", "band"]
-    column_searchable_list = ["name", "player_uuid"]
-    column_sortable_list = ["id", "name", "balance"]
-    column_default_sort = [("id", True)]
-    form_excluded_columns = ["user_perks", "created_at"]
-    name = "User"
-    name_plural = "Users"
+    name = "Игрок"
+    name_plural = "Игроки"
     icon = "fa-solid fa-user"
+
+    column_list = ["id", "qr_code", "player_uuid", "name", "balance", "profession", "band", "telegram_id"]
+    column_searchable_list = ["name", "player_uuid", "profession", "band"]
+    column_sortable_list = ["id", "name", "balance", "created_at"]
+    column_default_sort = [("id", True)]
+
+    column_labels = {
+        "id": "ID",
+        "qr_code": "QR",
+        "player_uuid": "UUID",
+        "name": "Имя",
+        "balance": "Баланс",
+        "profession": "Профессия",
+        "band": "Группировка",
+        "telegram_id": "Telegram ID",
+        "attributes": "Атрибуты (JSON)",
+        "created_at": "Создан",
+    }
+
+    form_excluded_columns = ["user_perks", "created_at"]
+
+    form_args = {
+        "player_uuid": {"default": generate_uuid},
+        "balance": {"default": 100},
+        "attributes": {"default": '{"strength": 5, "perception": 5, "endurance": 5, "charisma": 5, "intelligence": 5, "agility": 5, "luck": 5}'},
+    }
+
+    form_overrides = {
+        "attributes": TextAreaField,
+    }
+
+    form_widget_args = {
+        "attributes": {"rows": 4, "style": "font-family: monospace;"},
+        "player_uuid": {"style": "text-transform: uppercase;"},
+    }
+
+    column_formatters = {
+        "qr_code": lambda m, a: format_qr("LOGIN", m.player_uuid),
+        "balance": lambda m, a: format_balance(m.balance),
+    }
+
+    async def on_model_change(self, data, model, is_created, request):
+        if is_created and not data.get("player_uuid"):
+            data["player_uuid"] = generate_uuid()
+        if data.get("player_uuid"):
+            data["player_uuid"] = data["player_uuid"].upper()
 
 
 class AttributeAdmin(ModelView, model=Attribute):
-    column_list = ["id", "attribute_name", "display_name", "max_value"]
-    column_searchable_list = ["attribute_name", "display_name"]
-    name = "Attribute"
-    name_plural = "Attributes"
+    name = "Атрибут"
+    name_plural = "Атрибуты"
     icon = "fa-solid fa-chart-bar"
+
+    column_list = ["id", "attribute_name", "display_name", "max_value", "description"]
+    column_searchable_list = ["attribute_name", "display_name"]
+
+    column_labels = {
+        "id": "ID",
+        "attribute_name": "Имя (код)",
+        "display_name": "Отображение",
+        "max_value": "Макс. значение",
+        "description": "Описание",
+    }
 
 
 class ItemAdmin(ModelView, model=Item):
-    column_list = ["id", "item_id", "name", "price", "trader", "image_url"]
-    column_searchable_list = ["name", "item_id"]
-    column_sortable_list = ["id", "name", "price"]
-    name = "Item"
-    name_plural = "Items"
+    name = "Товар"
+    name_plural = "Товары"
     icon = "fa-solid fa-box"
+
+    column_list = ["id", "qr_code", "image", "item_id", "name", "price", "trader", "description"]
+    column_searchable_list = ["name", "item_id", "description"]
+    column_sortable_list = ["id", "name", "price"]
+    column_default_sort = [("name", False)]
+
+    column_labels = {
+        "id": "ID",
+        "qr_code": "QR",
+        "image": "Картинка",
+        "item_id": "ID товара",
+        "name": "Название",
+        "price": "Цена",
+        "trader": "Торговец",
+        "description": "Описание",
+        "image_url": "URL картинки",
+    }
+
+    form_args = {
+        "item_id": {"default": lambda: f"ITEM_{generate_uuid()}"},
+        "price": {"default": 10},
+    }
+
+    form_widget_args = {
+        "description": {"rows": 3},
+        "item_id": {"style": "text-transform: uppercase;"},
+    }
+
+    column_formatters = {
+        "qr_code": lambda m, a: format_qr("PAY", m.item_id),
+        "image": lambda m, a: format_image(m.image_url),
+        "price": lambda m, a: format_balance(m.price),
+    }
+
+    async def on_model_change(self, data, model, is_created, request):
+        if is_created and not data.get("item_id"):
+            data["item_id"] = f"ITEM_{generate_uuid()}"
+        if data.get("item_id"):
+            data["item_id"] = data["item_id"].upper()
 
 
 class PerkAdmin(ModelView, model=Perk):
-    column_list = ["id", "perk_id", "name", "one_time", "effect_type", "effect_value", "image_url"]
-    column_searchable_list = ["name", "perk_id"]
-    form_excluded_columns = ["user_perks"]
-    name = "Perk"
-    name_plural = "Perks"
+    name = "Перк"
+    name_plural = "Перки"
     icon = "fa-solid fa-star"
+
+    column_list = ["id", "qr_code", "image", "perk_id", "name", "one_time", "effect_type", "effect_value", "description"]
+    column_searchable_list = ["name", "perk_id", "description"]
+    column_sortable_list = ["id", "name", "one_time"]
+
+    column_labels = {
+        "id": "ID",
+        "qr_code": "QR",
+        "image": "Картинка",
+        "perk_id": "ID перка",
+        "name": "Название",
+        "description": "Описание",
+        "one_time": "Одноразовый",
+        "effect_type": "Тип эффекта",
+        "effect_value": "Значение",
+        "image_url": "URL картинки",
+    }
+
+    form_excluded_columns = ["user_perks"]
+
+    form_args = {
+        "perk_id": {"default": lambda: f"PERK_{generate_uuid()}"},
+        "effect_value": {"default": 1},
+    }
+
+    form_widget_args = {
+        "description": {"rows": 3},
+        "perk_id": {"style": "text-transform: uppercase;"},
+        "effect_type": {"placeholder": "attr_strength, attr_luck, balance, ..."},
+    }
+
+    column_formatters = {
+        "qr_code": lambda m, a: format_qr("PERK", m.perk_id),
+        "image": lambda m, a: format_image(m.image_url),
+        "one_time": lambda m, a: "✅ Да" if m.one_time else "🔄 Нет",
+        "effect_value": lambda m, a: Markup(f'<span style="color:{"green" if (m.effect_value or 0) > 0 else "red"}">{"+" if (m.effect_value or 0) > 0 else ""}{m.effect_value or 0}</span>'),
+    }
+
+    async def on_model_change(self, data, model, is_created, request):
+        if is_created and not data.get("perk_id"):
+            data["perk_id"] = f"PERK_{generate_uuid()}"
+        if data.get("perk_id"):
+            data["perk_id"] = data["perk_id"].upper()
 
 
 class UserPerkAdmin(ModelView, model=UserPerk):
+    name = "Перк игрока"
+    name_plural = "Перки игроков"
+    icon = "fa-solid fa-user-plus"
+
     column_list = ["id", "user", "perk", "applied_at"]
     column_sortable_list = ["id", "applied_at"]
     column_default_sort = [("applied_at", True)]
-    name = "User Perk"
-    name_plural = "User Perks"
-    icon = "fa-solid fa-user-plus"
+
+    column_labels = {
+        "id": "ID",
+        "user": "Игрок",
+        "perk": "Перк",
+        "applied_at": "Применён",
+    }
 
 
 class TraderAdmin(ModelView, model=Trader):
-    column_list = ["id", "trader_id", "name", "balance"]
-    column_searchable_list = ["name", "trader_id"]
-    form_excluded_columns = ["items"]
-    name = "Trader"
-    name_plural = "Traders"
+    name = "Торговец"
+    name_plural = "Торговцы"
     icon = "fa-solid fa-store"
+
+    column_list = ["id", "trader_id", "name", "balance", "items_count"]
+    column_searchable_list = ["name", "trader_id"]
+    column_sortable_list = ["id", "name", "balance"]
+
+    column_labels = {
+        "id": "ID",
+        "trader_id": "ID торговца",
+        "name": "Имя",
+        "balance": "Баланс",
+        "items_count": "Товаров",
+    }
+
+    form_excluded_columns = ["items"]
+
+    form_args = {
+        "trader_id": {"default": lambda: f"TRADER_{generate_uuid()}"},
+        "balance": {"default": 0},
+    }
+
+    form_widget_args = {
+        "trader_id": {"style": "text-transform: uppercase;"},
+    }
+
+    column_formatters = {
+        "balance": lambda m, a: format_balance(m.balance),
+        "items_count": lambda m, a: len(m.items) if m.items else 0,
+    }
+
+    async def on_model_change(self, data, model, is_created, request):
+        if is_created and not data.get("trader_id"):
+            data["trader_id"] = f"TRADER_{generate_uuid()}"
+        if data.get("trader_id"):
+            data["trader_id"] = data["trader_id"].upper()
 
 
 class TransactionAdmin(ModelView, model=Transaction):
-    column_list = ["id", "timestamp", "tx_type", "from_type", "from_id", "to_type", "to_id", "amount"]
-    column_sortable_list = ["id", "timestamp", "amount"]
+    name = "Транзакция"
+    name_plural = "Транзакции"
+    icon = "fa-solid fa-exchange-alt"
+
+    column_list = ["id", "timestamp", "tx_type", "from_type", "from_id", "to_type", "to_id", "amount", "description"]
+    column_sortable_list = ["id", "timestamp", "amount", "tx_type"]
     column_default_sort = [("timestamp", True)]
+
+    column_labels = {
+        "id": "ID",
+        "timestamp": "Время",
+        "tx_type": "Тип",
+        "from_type": "Откуда (тип)",
+        "from_id": "Откуда (ID)",
+        "to_type": "Куда (тип)",
+        "to_id": "Куда (ID)",
+        "amount": "Сумма",
+        "description": "Описание",
+    }
+
     can_create = False
     can_edit = False
     can_delete = False
-    name = "Transaction"
-    name_plural = "Transactions"
-    icon = "fa-solid fa-exchange-alt"
+
+    column_formatters = {
+        "amount": lambda m, a: format_balance(m.amount) if m.amount else "-",
+        "tx_type": lambda m, a: {
+            "transfer": "💸 Перевод",
+            "purchase": "🛒 Покупка",
+            "perk": "⭐ Перк",
+            "login": "🔐 Вход",
+        }.get(m.tx_type, m.tx_type),
+    }
 
 
 def setup_admin(app):
@@ -106,11 +325,11 @@ def setup_admin(app):
     )
 
     admin.add_view(UserAdmin)
-    admin.add_view(AttributeAdmin)
     admin.add_view(ItemAdmin)
     admin.add_view(PerkAdmin)
-    admin.add_view(UserPerkAdmin)
     admin.add_view(TraderAdmin)
+    admin.add_view(UserPerkAdmin)
     admin.add_view(TransactionAdmin)
+    admin.add_view(AttributeAdmin)
 
     return admin
