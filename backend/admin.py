@@ -5,8 +5,21 @@ from markupsafe import Markup
 from sqladmin import Admin, ModelView
 from sqladmin.authentication import AuthenticationBackend
 from starlette.requests import Request
-from wtforms import TextAreaField, SelectField
-from wtforms.validators import Optional
+from wtforms import TextAreaField, SelectField, IntegerField, Form
+from wtforms.validators import Optional, NumberRange
+import json
+
+
+# SPECIAL attributes
+SPECIAL_ATTRIBUTES = [
+    ("strength", "💪 Сила"),
+    ("perception", "👁 Восприятие"),
+    ("endurance", "❤️ Выносливость"),
+    ("charisma", "🗣 Харизма"),
+    ("intelligence", "🧠 Интеллект"),
+    ("agility", "🏃 Ловкость"),
+    ("luck", "🍀 Удача"),
+]
 
 
 # effect type choices for perks
@@ -89,25 +102,37 @@ class UserAdmin(ModelView, model=User):
         "profession": "Профессия",
         "band": "Группировка",
         "telegram_id": "Telegram ID",
-        "attributes": "Атрибуты (JSON)",
         "created_at": "Создан",
+        # attribute labels
+        "attr_strength": "💪 Сила",
+        "attr_perception": "👁 Восприятие",
+        "attr_endurance": "❤️ Выносливость",
+        "attr_charisma": "🗣 Харизма",
+        "attr_intelligence": "🧠 Интеллект",
+        "attr_agility": "🏃 Ловкость",
+        "attr_luck": "🍀 Удача",
     }
 
-    form_excluded_columns = ["user_perks", "created_at"]
+    form_excluded_columns = ["user_perks", "created_at", "attributes"]
 
     form_args = {
         "player_uuid": {"default": generate_uuid},
         "balance": {"default": 100},
-        "attributes": {"default": '{"strength": 5, "perception": 5, "endurance": 5, "charisma": 5, "intelligence": 5, "agility": 5, "luck": 5}'},
-    }
-
-    form_overrides = {
-        "attributes": TextAreaField,
     }
 
     form_widget_args = {
-        "attributes": {"rows": 4, "style": "font-family: monospace;"},
         "player_uuid": {"style": "text-transform: uppercase;"},
+    }
+
+    # extra fields for SPECIAL attributes
+    form_extra_fields = {
+        "attr_strength": IntegerField("💪 Сила", default=5, validators=[NumberRange(0, 10)]),
+        "attr_perception": IntegerField("👁 Восприятие", default=5, validators=[NumberRange(0, 10)]),
+        "attr_endurance": IntegerField("❤️ Выносливость", default=5, validators=[NumberRange(0, 10)]),
+        "attr_charisma": IntegerField("🗣 Харизма", default=5, validators=[NumberRange(0, 10)]),
+        "attr_intelligence": IntegerField("🧠 Интеллект", default=5, validators=[NumberRange(0, 10)]),
+        "attr_agility": IntegerField("🏃 Ловкость", default=5, validators=[NumberRange(0, 10)]),
+        "attr_luck": IntegerField("🍀 Удача", default=5, validators=[NumberRange(0, 10)]),
     }
 
     column_formatters = {
@@ -120,6 +145,32 @@ class UserAdmin(ModelView, model=User):
             data["player_uuid"] = generate_uuid()
         if data.get("player_uuid"):
             data["player_uuid"] = data["player_uuid"].upper()
+
+        # collect attributes from extra fields
+        attrs = {}
+        for attr_key, attr_label in SPECIAL_ATTRIBUTES:
+            field_name = f"attr_{attr_key}"
+            if field_name in data:
+                attrs[attr_key] = int(data.pop(field_name) or 5)
+            else:
+                attrs[attr_key] = 5
+        data["attributes"] = attrs
+
+    async def edit_form(self, obj):
+        form = await super().edit_form(obj)
+        # populate attribute fields from model
+        if obj and obj.attributes:
+            attrs = obj.attributes
+            if isinstance(attrs, str):
+                try:
+                    attrs = json.loads(attrs)
+                except Exception:
+                    attrs = {}
+            for attr_key, _ in SPECIAL_ATTRIBUTES:
+                field_name = f"attr_{attr_key}"
+                if hasattr(form, field_name):
+                    getattr(form, field_name).data = attrs.get(attr_key, 5)
+        return form
 
 
 class AttributeAdmin(ModelView, model=Attribute):

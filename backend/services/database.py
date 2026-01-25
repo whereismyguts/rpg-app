@@ -1,5 +1,6 @@
 """Database service - replaces SheetsService."""
 
+import json
 import uuid
 from datetime import datetime
 from typing import Optional
@@ -130,9 +131,19 @@ class DatabaseService:
         config = await self.get_attribute_config()
         attributes = []
 
+        # handle attributes that might be string or dict
+        user_attrs = user.get("attributes", {})
+        if isinstance(user_attrs, str):
+            try:
+                user_attrs = json.loads(user_attrs)
+            except Exception:
+                user_attrs = {}
+        if not isinstance(user_attrs, dict):
+            user_attrs = {}
+
         for attr_config in config:
             attr_name = attr_config["attribute_name"]
-            value = user.get("attributes", {}).get(attr_name, 0)
+            value = user_attrs.get(attr_name, 0)
             attributes.append({
                 "name": attr_name,
                 "display_name": attr_config.get("display_name", attr_name),
