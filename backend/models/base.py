@@ -1,10 +1,21 @@
 """Database base model and engine setup."""
 
+from datetime import datetime, timezone, timedelta
+
 from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
 from config.settings import settings
+
+
+# App timezone (UTC+1)
+APP_TIMEZONE = timezone(timedelta(hours=1))
+
+
+def now_local() -> datetime:
+    """Get current time in app timezone."""
+    return datetime.now(APP_TIMEZONE).replace(tzinfo=None)
 
 
 class Base(DeclarativeBase):

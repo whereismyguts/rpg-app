@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Manager</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background: #0a0a0a;
+            color: #14ff00;
+            padding: 20px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            border-bottom: 2px solid #14ff00;
+            padding-bottom: 10px;
+        }
+        h2 { color: #ffb000; margin-top: 0; }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #14ff00;
+        }
+        label { display: block; margin: 10px 0 5px; }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            background: #1a1a1a;
+            border: 1px solid #14ff00;
+            color: #14ff00;
+            font-family: inherit;
+            font-size: 14px;
+        }
+        select option { background: #1a1a1a; color: #14ff00; }
+        button {
+            padding: 12px 20px;
+            margin-top: 10px;
+            background: transparent;
+            border: 2px solid #ffb000;
+            color: #ffb000;
+            font-family: inherit;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        button:hover { background: rgba(255, 176, 0, 0.2); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-green { border-color: #14ff00; color: #14ff00; }
+        .btn-green:hover { background: rgba(20, 255, 0, 0.2); }
+        .btn-block { width: 100%; display: block; }
+
+        .upload-zone {
+            border: 2px dashed #14ff00;
+            padding: 40px 20px;
+            text-align: center;
+            margin: 15px 0;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .upload-zone:hover, .upload-zone.dragover {
+            background: rgba(20, 255, 0, 0.1);
+            border-style: solid;
+        }
+        .upload-zone input { display: none; }
+        .upload-zone p { margin: 0; }
+        .upload-zone .hint { color: #888; font-size: 12px; margin-top: 10px; }
+
+        .preview-container {
+            margin: 15px 0;
+            text-align: center;
+            display: none;
+        }
+        .preview-container img {
+            max-width: 200px;
+            max-height: 200px;
+            border: 2px solid #14ff00;
+        }
+        .preview-container .url {
+            margin-top: 10px;
+            padding: 10px;
+            background: #1a1a1a;
+            word-break: break-all;
+            font-size: 12px;
+        }
+
+        .entity-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .entity-card {
+            border: 1px solid #14ff00;
+            padding: 10px;
+            text-align: center;
+        }
+        .entity-card img {
+            width: 100px;
+            height: 100px;
+            object-fit: contain;
+            border: 1px solid #333;
+            background: #111;
+        }
+        .entity-card .no-image {
+            width: 100px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px dashed #333;
+            color: #555;
+            font-size: 12px;
+            margin: 0 auto;
+        }
+        .entity-card h4 { margin: 10px 0 5px; font-size: 14px; }
+        .entity-card .id { color: #888; font-size: 11px; }
+        .entity-card button { margin-top: 8px; padding: 6px 12px; font-size: 12px; }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .tabs button {
+            flex: 1;
+            border: 1px solid #14ff00;
+            color: #14ff00;
+            background: transparent;
+        }
+        .tabs button.active {
+            background: #14ff00;
+            color: #0a0a0a;
+        }
+
+        #loginOverlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: #0a0a0a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .login-box {
+            border: 2px solid #14ff00;
+            padding: 30px;
+            max-width: 400px;
+            width: 90%;
+        }
+        .login-box h2 { text-align: center; }
+        .error-msg { color: #ff4444; text-align: center; margin-top: 10px; display: none; }
+        #mainContent { display: none; }
+
+        .status { margin: 10px 0; padding: 10px; }
+        .status.success { background: rgba(20, 255, 0, 0.1); border: 1px solid #14ff00; }
+        .status.error { background: rgba(255, 68, 68, 0.1); border: 1px solid #ff4444; color: #ff4444; }
+    </style>
+</head>
+<body>
+    <div id="loginOverlay">
+        <div class="login-box">
+            <h2>ДОСТУП ОГРАНИЧЕН</h2>
+            <label>ПАРОЛЬ:</label>
+            <input type="password" id="adminPassword" placeholder="Введите пароль" onkeydown="if(event.key==='Enter')checkPassword()">
+            <button type="button" class="btn-block" onclick="checkPassword()">[ ВОЙТИ ]</button>
+            <p class="error-msg" id="loginError">Неверный пароль</p>
+        </div>
+    </div>
+
+    <div id="mainContent">
+        <h1>IMAGE MANAGER</h1>
+
+        <div class="section">
+            <h2>ЗАГРУЗИТЬ КАРТИНКУ</h2>
+
+            <label>ТИП:</label>
+            <select id="entityType" onchange="loadEntities()">
+                <option value="item">Товары</option>
+                <option value="perk">Перки</option>
+            </select>
+
+            <label>ВЫБЕРИТЕ:</label>
+            <select id="entitySelect">
+                <option value="">-- Загрузка... --</option>
+            </select>
+
+            <div class="tabs" style="margin-top: 15px;">
+                <button class="active" onclick="setTab('upload')">ФАЙЛ</button>
+                <button onclick="setTab('paste')">ВСТАВИТЬ</button>
+                <button onclick="setTab('url')">ССЫЛКА</button>
+            </div>
+
+            <div id="tab-upload">
+                <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                    <p>📁 НАЖМИТЕ ИЛИ ПЕРЕТАЩИТЕ ФАЙЛ</p>
+                    <p class="hint">PNG, JPG, GIF до 10MB</p>
+                    <input type="file" id="fileInput" accept="image/*" onchange="handleFileSelect(event)">
+                </div>
+            </div>
+
+            <div id="tab-paste" style="display: none;">
+                <div class="upload-zone" id="pasteZone" tabindex="0">
+                    <p>📋 НАЖМИТЕ И ВСТАВЬТЕ (Ctrl+V)</p>
+                    <p class="hint">Скопируйте картинку и вставьте сюда</p>
+                </div>
+            </div>
+
+            <div id="tab-url" style="display: none;">
+                <label>URL КАРТИНКИ:</label>
+                <input type="text" id="imageUrl" placeholder="https://example.com/image.png">
+                <button onclick="setImageFromUrl()" style="margin-top: 10px;">[ ПРИМЕНИТЬ URL ]</button>
+            </div>
+
+            <div class="preview-container" id="previewContainer">
+                <p>ПРЕДПРОСМОТР:</p>
+                <img id="previewImage" alt="Preview">
+                <div class="url" id="previewUrl"></div>
+                <button class="btn-green" onclick="saveImage()">[ СОХРАНИТЬ ]</button>
+            </div>
+
+            <div id="statusMessage"></div>
+        </div>
+
+        <div class="section">
+            <h2>ВСЕ КАРТИНКИ</h2>
+            <div class="tabs">
+                <button class="active" onclick="switchEntityList('item')">ТОВАРЫ</button>
+                <button onclick="switchEntityList('perk')">ПЕРКИ</button>
+            </div>
+            <div class="entity-list" id="entityList"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.port === '5174' ? 'http://localhost:8001' : window.location.origin;
+        let entityData = { items: [], perks: [] };
+        let currentTab = 'upload';
+        let pendingImageData = null;
+        let pendingImageUrl = null;
+
+        async function checkPassword() {
+            const password = document.getElementById('adminPassword').value;
+            try {
+                const response = await fetch(`${API_BASE}/api/admin/verify`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+                if (response.ok) {
+                    document.getElementById('loginOverlay').style.display = 'none';
+                    document.getElementById('mainContent').style.display = 'block';
+                    sessionStorage.setItem('img_admin_auth', '1');
+                    init();
+                } else {
+                    document.getElementById('loginError').style.display = 'block';
+                }
+            } catch (e) {
+                document.getElementById('loginError').textContent = 'Ошибка соединения';
+                document.getElementById('loginError').style.display = 'block';
+            }
+        }
+
+        async function init() {
+            await loadAllData();
+            loadEntities();
+            renderEntityList('item');
+            setupPasteHandler();
+            setupDragDrop();
+        }
+
+        async function loadAllData() {
+            try {
+                const [itemsRes, perksRes] = await Promise.all([
+                    fetch(`${API_BASE}/api/admin/items`),
+                    fetch(`${API_BASE}/api/admin/perks`)
+                ]);
+                entityData.items = (await itemsRes.json()).items || [];
+                entityData.perks = (await perksRes.json()).perks || [];
+            } catch (e) {
+                console.error('Failed to load data:', e);
+            }
+        }
+
+        function loadEntities() {
+            const type = document.getElementById('entityType').value;
+            const select = document.getElementById('entitySelect');
+            const items = type === 'item' ? entityData.items : entityData.perks;
+            const idKey = type === 'item' ? 'item_id' : 'perk_id';
+
+            select.innerHTML = '<option value="">-- Выберите --</option>';
+            items.forEach(item => {
+                const o = document.createElement('option');
+                o.value = item[idKey];
+                o.textContent = `${item.name}${item.image_url ? ' ✓' : ''}`;
+                select.appendChild(o);
+            });
+        }
+
+        function setTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tabs button').forEach((btn, i) => {
+                btn.classList.toggle('active', ['upload', 'paste', 'url'][i] === tab);
+            });
+            document.getElementById('tab-upload').style.display = tab === 'upload' ? 'block' : 'none';
+            document.getElementById('tab-paste').style.display = tab === 'paste' ? 'block' : 'none';
+            document.getElementById('tab-url').style.display = tab === 'url' ? 'block' : 'none';
+        }
+
+        function setupDragDrop() {
+            const zone = document.getElementById('dropZone');
+            zone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                zone.classList.add('dragover');
+            });
+            zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                zone.classList.remove('dragover');
+                const file = e.dataTransfer.files[0];
+                if (file && file.type.startsWith('image/')) {
+                    processFile(file);
+                }
+            });
+        }
+
+        function setupPasteHandler() {
+            const zone = document.getElementById('pasteZone');
+            zone.addEventListener('paste', (e) => {
+                const items = e.clipboardData.items;
+                for (let item of items) {
+                    if (item.type.startsWith('image/')) {
+                        const file = item.getAsFile();
+                        processFile(file);
+                        break;
+                    }
+                }
+            });
+            zone.addEventListener('click', () => zone.focus());
+        }
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) processFile(file);
+        }
+
+        function processFile(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                pendingImageData = e.target.result;
+                pendingImageUrl = null;
+                showPreview(e.target.result);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function showPreview(src) {
+            document.getElementById('previewImage').src = src;
+            document.getElementById('previewUrl').textContent = src.startsWith('data:') ? 'Локальный файл' : src;
+            document.getElementById('previewContainer').style.display = 'block';
+        }
+
+        function setImageFromUrl() {
+            const url = document.getElementById('imageUrl').value.trim();
+            if (!url) {
+                showStatus('Введите URL', 'error');
+                return;
+            }
+            pendingImageUrl = url;
+            pendingImageData = null;
+            showPreview(url);
+        }
+
+        async function saveImage() {
+            const entityType = document.getElementById('entityType').value;
+            const entityId = document.getElementById('entitySelect').value;
+
+            if (!entityId) {
+                showStatus('Выберите элемент', 'error');
+                return;
+            }
+
+            showStatus('Сохранение...', 'success');
+
+            try {
+                let url;
+
+                if (pendingImageUrl) {
+                    // direct URL
+                    const response = await fetch(`${API_BASE}/api/admin/set-image-url`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            entity_type: entityType,
+                            entity_id: entityId,
+                            image_url: pendingImageUrl
+                        })
+                    });
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.detail || 'Error');
+                    url = data.url;
+                } else if (pendingImageData) {
+                    // upload base64
+                    const response = await fetch(`${API_BASE}/api/admin/upload-image-base64`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            image_data: pendingImageData,
+                            entity_type: entityType,
+                            entity_id: entityId
+                        })
+                    });
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.detail || 'Error');
+                    url = data.url;
+                } else {
+                    showStatus('Нет картинки для сохранения', 'error');
+                    return;
+                }
+
+                showStatus(`Сохранено! ${url}`, 'success');
+                document.getElementById('previewUrl').textContent = url;
+
+                // refresh data
+                await loadAllData();
+                loadEntities();
+                renderEntityList(entityType);
+
+            } catch (e) {
+                showStatus('Ошибка: ' + e.message, 'error');
+            }
+        }
+
+        function showStatus(msg, type) {
+            const el = document.getElementById('statusMessage');
+            el.innerHTML = `<div class="status ${type}">${msg}</div>`;
+        }
+
+        function switchEntityList(type) {
+            document.querySelectorAll('.section:last-child .tabs button').forEach((btn, i) => {
+                btn.classList.toggle('active', ['item', 'perk'][i] === type);
+            });
+            renderEntityList(type);
+        }
+
+        function renderEntityList(type) {
+            const container = document.getElementById('entityList');
+            const items = type === 'item' ? entityData.items : entityData.perks;
+            const idKey = type === 'item' ? 'item_id' : 'perk_id';
+
+            container.innerHTML = items.map(item => `
+                <div class="entity-card">
+                    ${item.image_url
+                        ? `<img src="${item.image_url}" alt="${item.name}">`
+                        : `<div class="no-image">НЕТ</div>`}
+                    <h4>${item.name}</h4>
+                    <div class="id">${item[idKey]}</div>
+                    <button onclick="selectEntity('${type}', '${item[idKey]}')">ВЫБРАТЬ</button>
+                </div>
+            `).join('');
+        }
+
+        function selectEntity(type, id) {
+            document.getElementById('entityType').value = type;
+            loadEntities();
+            setTimeout(() => {
+                document.getElementById('entitySelect').value = id;
+            }, 100);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // auto-login if already authenticated
+        if (sessionStorage.getItem('img_admin_auth') === '1') {
+            document.getElementById('loginOverlay').style.display = 'none';
+            document.getElementById('mainContent').style.display = 'block';
+            init();
+        }
+    </script>
+</body>
+</html>

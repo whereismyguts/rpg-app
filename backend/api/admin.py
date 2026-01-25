@@ -1,11 +1,13 @@
 """Admin API endpoints."""
 
-from fastapi import APIRouter, HTTPException
+import base64
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from pydantic import BaseModel
+from typing import Optional
 
 from config.settings import settings
 from services.database import db_service
-from services.imagegen import generate_image
+from services.imagegen import generate_image, upload_to_catbox
 from models import async_session, Attribute, Trader, Item, Perk, User
 from sqlalchemy import select
 
@@ -164,3 +166,97 @@ async def generate_entity_image(request: GenerateImageRequest):
         "success": True,
         "image_url": image_url
     }
+
+
+@router.post("/upload-image")
+async def upload_image(file: UploadFile = File(...)):
+    """Upload image file and return hosted URL."""
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="File must be an image")
+
+    # read file content
+    content = await file.read()
+    if len(content) > 10 * 1024 * 1024:  # 10MB limit
+        raise HTTPException(status_code=400, detail="File too large (max 10MB)")
+
+    # upload to catbox
+    url = await upload_to_catbox(content)
+    if not url:
+        raise HTTPException(status_code=500, detail="Failed to upload image")
+
+    return {"success": True, "url": url}
+
+
+class Base64ImageRequest(BaseModel):
+    image_data: str  # base64 encoded image or data URL
+    entity_type: Optional[str] = None
+    entity_id: Optional[str] = None
+
+
+@router.post("/upload-image-base64")
+async def upload_image_base64(request: Base64ImageRequest):
+    """Upload base64 image and optionally save to entity."""
+    data = request.image_data
+
+    # handle data URL format
+    if data.startswith("data:image"):
+        # extract base64 part after comma
+        if "," in data:
+            data = data.split(",", 1)[1]
+
+    try:
+        image_bytes = base64.b64decode(data)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid base64 data")
+
+    if len(image_bytes) > 10 * 1024 * 1024:  # 10MB limit
+        raise HTTPException(status_code=400, detail="Image too large (max 10MB)")
+
+    # upload to catbox
+    url = await upload_to_catbox(image_bytes)
+    if not url:
+        raise HTTPException(status_code=500, detail="Failed to upload image")
+
+    # if entity specified, save to database
+    if request.entity_type and request.entity_id:
+        success = await db_service.update_entity_image(
+            request.entity_type,
+            request.entity_id,
+            url
+        )
+        if not success:
+            raise HTTPException(status_code=500, detail="Failed to save image URL")
+
+    return {"success": True, "url": url}
+
+
+class SetImageUrlRequest(BaseModel):
+    entity_type: str
+    entity_id: str
+    image_url: str
+
+
+@router.post("/set-image-url")
+async def set_image_url(request: SetImageUrlRequest):
+    """Set image URL for an entity directly."""
+    if request.entity_type == "item":
+        entity = await db_service.get_item_by_id(request.entity_id)
+        if not entity:
+            raise HTTPException(status_code=404, detail="Item not found")
+    elif request.entity_type == "perk":
+        entity = await db_service.get_perk_by_id(request.entity_id)
+        if not entity:
+            raise HTTPException(status_code=404, detail="Perk not found")
+    else:
+        raise HTTPException(status_code=400, detail="Invalid entity type")
+
+    success = await db_service.update_entity_image(
+        request.entity_type,
+        request.entity_id,
+        request.image_url
+    )
+
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to save image URL")
+
+    return {"success": True, "url": request.image_url}

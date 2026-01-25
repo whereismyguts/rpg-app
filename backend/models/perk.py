@@ -1,12 +1,11 @@
 """Perk and UserPerk models."""
 
-from datetime import datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from .base import Base
+from .base import Base, now_local
 
 if TYPE_CHECKING:
     from .user import User
@@ -45,7 +44,7 @@ class UserPerk(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
     perk_id: Mapped[int] = mapped_column(Integer, ForeignKey("perks.id"))
-    applied_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    applied_at = mapped_column(DateTime, default=now_local)
 
     user: Mapped["User"] = relationship("User", back_populates="user_perks")
     perk: Mapped["Perk"] = relationship("Perk", back_populates="user_perks")

@@ -1,13 +1,12 @@
 """User model."""
 
-from datetime import datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy import BigInteger, DateTime, Integer, String
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from .base import Base
+from .base import Base, now_local
 
 if TYPE_CHECKING:
     from .perk import UserPerk
@@ -24,7 +23,7 @@ class User(Base):
     balance: Mapped[int] = mapped_column(Integer, default=100)
     band: Mapped[str | None] = mapped_column(String(100), nullable=True)
     attributes: Mapped[dict] = mapped_column(JSONB, default=dict)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at = mapped_column(DateTime, default=now_local)
 
     user_perks: Mapped[list["UserPerk"]] = relationship("UserPerk", back_populates="user")
 

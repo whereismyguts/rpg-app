@@ -1,18 +1,16 @@
 """Transaction model."""
 
-from datetime import datetime
-
 from sqlalchemy import DateTime, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from .base import Base
+from .base import Base, now_local
 
 
 class Transaction(Base):
     __tablename__ = "transactions"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    timestamp: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    timestamp = mapped_column(DateTime, default=now_local)
     from_type: Mapped[str] = mapped_column(String(20), nullable=False)
     from_id: Mapped[str] = mapped_column(String(50), nullable=False)
     to_type: Mapped[str] = mapped_column(String(20), nullable=False)
