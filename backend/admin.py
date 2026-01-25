@@ -103,7 +103,6 @@ class UserAdmin(ModelView, model=User):
         "band": "Группировка",
         "telegram_id": "Telegram ID",
         "created_at": "Создан",
-        # attribute labels
         "attr_strength": "💪 Сила",
         "attr_perception": "👁 Восприятие",
         "attr_endurance": "❤️ Выносливость",
@@ -124,15 +123,14 @@ class UserAdmin(ModelView, model=User):
         "player_uuid": {"style": "text-transform: uppercase;"},
     }
 
-    # extra fields for SPECIAL attributes
     form_extra_fields = {
-        "attr_strength": IntegerField("💪 Сила", default=5, validators=[NumberRange(0, 10)]),
-        "attr_perception": IntegerField("👁 Восприятие", default=5, validators=[NumberRange(0, 10)]),
-        "attr_endurance": IntegerField("❤️ Выносливость", default=5, validators=[NumberRange(0, 10)]),
-        "attr_charisma": IntegerField("🗣 Харизма", default=5, validators=[NumberRange(0, 10)]),
-        "attr_intelligence": IntegerField("🧠 Интеллект", default=5, validators=[NumberRange(0, 10)]),
-        "attr_agility": IntegerField("🏃 Ловкость", default=5, validators=[NumberRange(0, 10)]),
-        "attr_luck": IntegerField("🍀 Удача", default=5, validators=[NumberRange(0, 10)]),
+        "attr_strength": IntegerField("💪 Сила", default=5),
+        "attr_perception": IntegerField("👁 Восприятие", default=5),
+        "attr_endurance": IntegerField("❤️ Выносливость", default=5),
+        "attr_charisma": IntegerField("🗣 Харизма", default=5),
+        "attr_intelligence": IntegerField("🧠 Интеллект", default=5),
+        "attr_agility": IntegerField("🏃 Ловкость", default=5),
+        "attr_luck": IntegerField("🍀 Удача", default=5),
     }
 
     column_formatters = {
@@ -146,30 +144,42 @@ class UserAdmin(ModelView, model=User):
         if data.get("player_uuid"):
             data["player_uuid"] = data["player_uuid"].upper()
 
-        # collect attributes from extra fields
-        attrs = {}
-        for attr_key, attr_label in SPECIAL_ATTRIBUTES:
-            field_name = f"attr_{attr_key}"
-            if field_name in data:
-                attrs[attr_key] = int(data.pop(field_name) or 5)
-            else:
-                attrs[attr_key] = 5
+        # collect attributes from extra fields into JSON
+        attrs = {
+            "strength": data.pop("attr_strength", 5) or 5,
+            "perception": data.pop("attr_perception", 5) or 5,
+            "endurance": data.pop("attr_endurance", 5) or 5,
+            "charisma": data.pop("attr_charisma", 5) or 5,
+            "intelligence": data.pop("attr_intelligence", 5) or 5,
+            "agility": data.pop("attr_agility", 5) or 5,
+            "luck": data.pop("attr_luck", 5) or 5,
+        }
         data["attributes"] = attrs
 
     async def edit_form(self, obj):
         form = await super().edit_form(obj)
-        # populate attribute fields from model
         if obj and obj.attributes:
             attrs = obj.attributes
             if isinstance(attrs, str):
                 try:
                     attrs = json.loads(attrs)
-                except Exception:
+                except:
                     attrs = {}
-            for attr_key, _ in SPECIAL_ATTRIBUTES:
-                field_name = f"attr_{attr_key}"
-                if hasattr(form, field_name):
-                    getattr(form, field_name).data = attrs.get(attr_key, 5)
+            if isinstance(attrs, dict):
+                if hasattr(form, "attr_strength"):
+                    form.attr_strength.data = attrs.get("strength", 5)
+                if hasattr(form, "attr_perception"):
+                    form.attr_perception.data = attrs.get("perception", 5)
+                if hasattr(form, "attr_endurance"):
+                    form.attr_endurance.data = attrs.get("endurance", 5)
+                if hasattr(form, "attr_charisma"):
+                    form.attr_charisma.data = attrs.get("charisma", 5)
+                if hasattr(form, "attr_intelligence"):
+                    form.attr_intelligence.data = attrs.get("intelligence", 5)
+                if hasattr(form, "attr_agility"):
+                    form.attr_agility.data = attrs.get("agility", 5)
+                if hasattr(form, "attr_luck"):
+                    form.attr_luck.data = attrs.get("luck", 5)
         return form
 
 
