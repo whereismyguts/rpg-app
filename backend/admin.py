@@ -102,35 +102,24 @@ class UserAdmin(ModelView, model=User):
         "profession": "Профессия",
         "band": "Группировка",
         "telegram_id": "Telegram ID",
+        "attributes": "S.P.E.C.I.A.L.",
         "created_at": "Создан",
-        "attr_strength": "💪 Сила",
-        "attr_perception": "👁 Восприятие",
-        "attr_endurance": "❤️ Выносливость",
-        "attr_charisma": "🗣 Харизма",
-        "attr_intelligence": "🧠 Интеллект",
-        "attr_agility": "🏃 Ловкость",
-        "attr_luck": "🍀 Удача",
     }
 
-    form_excluded_columns = ["user_perks", "created_at", "attributes"]
+    form_excluded_columns = ["user_perks", "created_at"]
 
     form_args = {
         "player_uuid": {"default": generate_uuid},
         "balance": {"default": 100},
     }
 
-    form_widget_args = {
-        "player_uuid": {"style": "text-transform: uppercase;"},
+    form_overrides = {
+        "attributes": TextAreaField,
     }
 
-    form_extra_fields = {
-        "attr_strength": IntegerField("💪 Сила", default=5),
-        "attr_perception": IntegerField("👁 Восприятие", default=5),
-        "attr_endurance": IntegerField("❤️ Выносливость", default=5),
-        "attr_charisma": IntegerField("🗣 Харизма", default=5),
-        "attr_intelligence": IntegerField("🧠 Интеллект", default=5),
-        "attr_agility": IntegerField("🏃 Ловкость", default=5),
-        "attr_luck": IntegerField("🍀 Удача", default=5),
+    form_widget_args = {
+        "player_uuid": {"style": "text-transform: uppercase;"},
+        "attributes": {"rows": 8, "style": "font-family: monospace; font-size: 14px;"},
     }
 
     column_formatters = {
@@ -144,42 +133,42 @@ class UserAdmin(ModelView, model=User):
         if data.get("player_uuid"):
             data["player_uuid"] = data["player_uuid"].upper()
 
-        # collect attributes from extra fields into JSON
-        attrs = {
-            "strength": data.pop("attr_strength", 5) or 5,
-            "perception": data.pop("attr_perception", 5) or 5,
-            "endurance": data.pop("attr_endurance", 5) or 5,
-            "charisma": data.pop("attr_charisma", 5) or 5,
-            "intelligence": data.pop("attr_intelligence", 5) or 5,
-            "agility": data.pop("attr_agility", 5) or 5,
-            "luck": data.pop("attr_luck", 5) or 5,
-        }
-        data["attributes"] = attrs
+        # parse attributes JSON string to dict
+        attrs = data.get("attributes")
+        if isinstance(attrs, str):
+            try:
+                data["attributes"] = json.loads(attrs)
+            except:
+                data["attributes"] = {}
 
     async def edit_form(self, obj):
         form = await super().edit_form(obj)
+        # format attributes as pretty JSON for editing
         if obj and obj.attributes:
             attrs = obj.attributes
-            if isinstance(attrs, str):
-                try:
-                    attrs = json.loads(attrs)
-                except:
-                    attrs = {}
             if isinstance(attrs, dict):
-                if hasattr(form, "attr_strength"):
-                    form.attr_strength.data = attrs.get("strength", 5)
-                if hasattr(form, "attr_perception"):
-                    form.attr_perception.data = attrs.get("perception", 5)
-                if hasattr(form, "attr_endurance"):
-                    form.attr_endurance.data = attrs.get("endurance", 5)
-                if hasattr(form, "attr_charisma"):
-                    form.attr_charisma.data = attrs.get("charisma", 5)
-                if hasattr(form, "attr_intelligence"):
-                    form.attr_intelligence.data = attrs.get("intelligence", 5)
-                if hasattr(form, "attr_agility"):
-                    form.attr_agility.data = attrs.get("agility", 5)
-                if hasattr(form, "attr_luck"):
-                    form.attr_luck.data = attrs.get("luck", 5)
+                form.attributes.data = json.dumps(attrs, ensure_ascii=False, indent=2)
+            elif isinstance(attrs, str):
+                try:
+                    parsed = json.loads(attrs)
+                    form.attributes.data = json.dumps(parsed, ensure_ascii=False, indent=2)
+                except:
+                    form.attributes.data = attrs
+        return form
+
+    async def scaffold_form(self):
+        form = await super().scaffold_form()
+        # set default for new users
+        if hasattr(form, "attributes"):
+            form.attributes.kwargs["default"] = json.dumps({
+                "strength": 5,
+                "perception": 5,
+                "endurance": 5,
+                "charisma": 5,
+                "intelligence": 5,
+                "agility": 5,
+                "luck": 5
+            }, indent=2)
         return form
 
 

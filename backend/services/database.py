@@ -132,7 +132,7 @@ class DatabaseService:
         attributes = []
 
         # handle attributes that might be string or dict
-        user_attrs = user.get("attributes", {})
+        user_attrs = user.get("attributes") or {}
         if isinstance(user_attrs, str):
             try:
                 user_attrs = json.loads(user_attrs)
@@ -143,7 +143,7 @@ class DatabaseService:
 
         for attr_config in config:
             attr_name = attr_config["attribute_name"]
-            value = user_attrs.get(attr_name, 0)
+            value = user_attrs.get(attr_name)
             attributes.append({
                 "name": attr_name,
                 "display_name": attr_config.get("display_name", attr_name),
