@@ -5,8 +5,22 @@ from markupsafe import Markup
 from sqladmin import Admin, ModelView
 from sqladmin.authentication import AuthenticationBackend
 from starlette.requests import Request
-from wtforms import TextAreaField
+from wtforms import TextAreaField, SelectField
 from wtforms.validators import Optional
+
+
+# effect type choices for perks
+EFFECT_TYPE_CHOICES = [
+    ("", "-- Выберите --"),
+    ("balance", "💰 Баланс (крышки)"),
+    ("attr_strength", "💪 Сила"),
+    ("attr_perception", "👁 Восприятие"),
+    ("attr_endurance", "❤️ Выносливость"),
+    ("attr_charisma", "🗣 Харизма"),
+    ("attr_intelligence", "🧠 Интеллект"),
+    ("attr_agility", "🏃 Ловкость"),
+    ("attr_luck", "🍀 Удача"),
+]
 
 from config.settings import settings
 from models import User, Attribute, Item, Perk, UserPerk, Trader, Transaction
@@ -53,7 +67,7 @@ def format_qr(entity_type, entity_id):
 
 def format_balance(value):
     """Format balance with caps icon."""
-    return Markup(f'<strong>{value}</strong> 🧢')
+    return Markup(f'<strong>{value}</strong> 🔴')
 
 
 class UserAdmin(ModelView, model=User):
@@ -194,15 +208,19 @@ class PerkAdmin(ModelView, model=Perk):
 
     form_excluded_columns = ["user_perks"]
 
+    form_overrides = {
+        "effect_type": SelectField,
+    }
+
     form_args = {
         "perk_id": {"default": lambda: f"PERK_{generate_uuid()}"},
         "effect_value": {"default": 1},
+        "effect_type": {"choices": EFFECT_TYPE_CHOICES, "coerce": str},
     }
 
     form_widget_args = {
         "description": {"rows": 3},
         "perk_id": {"style": "text-transform: uppercase;"},
-        "effect_type": {"placeholder": "attr_strength, attr_luck, balance, ..."},
     }
 
     column_formatters = {
