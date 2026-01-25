@@ -105,8 +105,6 @@ class UserAdmin(ModelView, model=User):
         "created_at": "Создан",
     }
 
-    form_excluded_columns = ["user_perks", "created_at", "attributes"]
-
     # explicitly list form columns including extra fields
     form_columns = [
         "telegram_id",
