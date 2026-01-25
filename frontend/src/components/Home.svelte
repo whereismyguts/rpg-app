@@ -51,9 +51,13 @@
 
 <div class="terminal">
   <div class="terminal-header">
-    <p class="text-dim">ВЫ ВОШЛИ КАК</p>
     <h2 class="terminal-title">{$auth.name}</h2>
-    <p class="text-dim">ID: {$auth.playerUuid}</p>
+    {#if stats?.profession}
+      <p class="profession">{stats.profession}</p>
+    {/if}
+    {#if stats?.band}
+      <p class="text-dim band-info">Группировка: {stats.band}</p>
+    {/if}
   </div>
 
   {#if loading}
@@ -62,8 +66,7 @@
     </div>
   {:else}
     <div class="balance-display">
-      <p class="balance-label">Баланс</p>
-      <p>{$auth.balance} <span class="text-amber">КРЫШЕК</span></p>
+      <p class="balance-value">{$auth.balance} <span class="text-amber">КРЫШЕК</span></p>
     </div>
 
     <hr class="separator" />
@@ -79,12 +82,6 @@
       <hr class="separator" />
       <div class="stats-section">
         <p class="section-title">S.P.E.C.I.A.L.</p>
-        {#if stats.profession}
-          <p class="text-dim stats-info">Профессия: {stats.profession}</p>
-        {/if}
-        {#if stats.band}
-          <p class="text-dim stats-info">Группировка: {stats.band}</p>
-        {/if}
         <div class="attributes-list">
           {#each stats.attributes as attr}
             <AttributeBar
@@ -164,6 +161,22 @@
 </div>
 
 <style>
+  .profession {
+    font-size: 0.85rem;
+    color: var(--terminal-green-dim);
+    margin-top: 4px;
+  }
+
+  .band-info {
+    font-size: 0.8rem;
+    margin-top: 8px;
+  }
+
+  .balance-value {
+    font-size: 1.5rem;
+    text-align: center;
+  }
+
   .section-title {
     font-size: 0.9rem;
     text-transform: uppercase;
@@ -175,12 +188,6 @@
 
   .stats-section {
     margin-top: 16px;
-  }
-
-  .stats-info {
-    text-align: center;
-    margin-bottom: 8px;
-    font-size: 0.85rem;
   }
 
   .attributes-list {
