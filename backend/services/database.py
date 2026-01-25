@@ -131,15 +131,8 @@ class DatabaseService:
         config = await self.get_attribute_config()
         attributes = []
 
-        # handle attributes that might be string or dict
+        # attributes should be dict from JSONB column
         user_attrs = user.get("attributes") or {}
-        if isinstance(user_attrs, str):
-            try:
-                user_attrs = json.loads(user_attrs)
-            except Exception:
-                user_attrs = {}
-        if not isinstance(user_attrs, dict):
-            user_attrs = {}
 
         for attr_config in config:
             attr_name = attr_config["attribute_name"]

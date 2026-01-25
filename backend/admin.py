@@ -127,6 +127,11 @@ class UserAdmin(ModelView, model=User):
             data["player_uuid"] = generate_uuid()
         if data.get("player_uuid"):
             data["player_uuid"] = data["player_uuid"].upper()
+        # parse attributes from string to dict if needed
+        attrs = data.get("attributes")
+        if isinstance(attrs, str):
+            import ast
+            data["attributes"] = ast.literal_eval(attrs)
 
 
 class AttributeAdmin(ModelView, model=Attribute):
