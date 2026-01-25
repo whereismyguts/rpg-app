@@ -25,6 +25,9 @@ class Perk(Base):
 
     user_perks: Mapped[list["UserPerk"]] = relationship("UserPerk", back_populates="perk")
 
+    def __str__(self) -> str:
+        return self.name
+
     def to_dict(self) -> dict:
         return {
             "perk_id": self.perk_id,

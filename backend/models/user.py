@@ -27,6 +27,9 @@ class User(Base):
 
     user_perks: Mapped[list["UserPerk"]] = relationship("UserPerk", back_populates="user")
 
+    def __str__(self) -> str:
+        return f"{self.name} ({self.player_uuid})"
+
     def to_dict(self) -> dict:
         return {
             "user_id": self.telegram_id,
