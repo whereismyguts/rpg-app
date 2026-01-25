@@ -76,20 +76,24 @@ def parse_user_from_init_data(parsed_data: dict) -> Optional[int]:
 @router.post("/login", response_model=LoginResponse)
 async def login(request: LoginRequest):
     user = None
+    telegram_id = None
 
-    # Option 1: Telegram WebApp auth
+    # extract telegram user_id if init_data provided
     if request.init_data:
         parsed_data = validate_webapp_data(request.init_data)
-        if not parsed_data:
-            raise HTTPException(401, "Invalid WebApp signature")
+        if parsed_data:
+            telegram_id = parse_user_from_init_data(parsed_data)
 
-        user_id = parse_user_from_init_data(parsed_data)
-        if user_id:
-            user = await db_service.get_user_by_telegram_id(user_id)
-
-    # Option 2: UUID-based login
-    elif request.player_uuid:
+    # Option 1: UUID-based login (primary)
+    if request.player_uuid:
         user = await db_service.get_user_by_uuid(request.player_uuid.upper())
+        # link telegram_id to this player if we have it
+        if user and telegram_id:
+            await db_service.link_telegram_to_player(telegram_id, request.player_uuid.upper())
+
+    # Option 2: Telegram-only login (if already linked)
+    elif telegram_id:
+        user = await db_service.get_user_by_telegram_id(telegram_id)
 
     if not user:
         raise HTTPException(404, "User not found")
