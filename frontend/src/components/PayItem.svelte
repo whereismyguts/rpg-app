@@ -50,7 +50,9 @@
   {:else if item}
     <div class="item-card">
       {#if item.image_url}
-        <img src={item.image_url} alt={item.name} class="item-image" />
+        <div class="image-wrapper">
+          <img src={item.image_url} alt={item.name} class="item-image" />
+        </div>
       {/if}
       <h3 class="item-name">{item.name}</h3>
       {#if item.description}
@@ -107,12 +109,19 @@
     text-align: center;
   }
 
-  .item-image {
-    max-width: 200px;
-    max-height: 200px;
-    object-fit: contain;
-    margin-bottom: 12px;
+  .image-wrapper {
+    width: 180px;
+    height: 180px;
+    margin: 0 auto 12px;
+    overflow: hidden;
     border: 1px solid var(--terminal-green-dim);
+  }
+
+  .item-image {
+    width: 200px;
+    height: 200px;
+    object-fit: cover;
+    margin: -10px;
   }
 
   .item-name {

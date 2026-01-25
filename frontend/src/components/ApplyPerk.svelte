@@ -78,7 +78,9 @@
   {:else if perk}
     <div class="perk-card">
       {#if perk.image_url}
-        <img src={perk.image_url} alt={perk.name} class="perk-image" />
+        <div class="image-wrapper">
+          <img src={perk.image_url} alt={perk.name} class="perk-image" />
+        </div>
       {/if}
       <h3 class="perk-name">{perk.name}</h3>
       {#if perk.description}
@@ -136,12 +138,19 @@
     text-align: center;
   }
 
-  .perk-image {
-    max-width: 200px;
-    max-height: 200px;
-    object-fit: contain;
-    margin-bottom: 12px;
+  .image-wrapper {
+    width: 180px;
+    height: 180px;
+    margin: 0 auto 12px;
+    overflow: hidden;
     border: 1px solid var(--terminal-green-dim);
+  }
+
+  .perk-image {
+    width: 200px;
+    height: 200px;
+    object-fit: cover;
+    margin: -10px;
   }
 
   .perk-name {
