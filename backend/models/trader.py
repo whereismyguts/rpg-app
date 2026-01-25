@@ -21,6 +21,9 @@ class Trader(Base):
 
     items: Mapped[list["Item"]] = relationship("Item", back_populates="trader")
 
+    def __str__(self) -> str:
+        return self.name
+
     def to_dict(self) -> dict:
         return {
             "trader_id": self.trader_id,
