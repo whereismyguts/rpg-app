@@ -102,24 +102,45 @@ class UserAdmin(ModelView, model=User):
         "profession": "Профессия",
         "band": "Группировка",
         "telegram_id": "Telegram ID",
-        "attributes": "S.P.E.C.I.A.L.",
         "created_at": "Создан",
     }
 
-    form_excluded_columns = ["user_perks", "created_at"]
+    form_excluded_columns = ["user_perks", "created_at", "attributes"]
+
+    # explicitly list form columns including extra fields
+    form_columns = [
+        "telegram_id",
+        "player_uuid",
+        "name",
+        "profession",
+        "balance",
+        "band",
+        "attr_strength",
+        "attr_perception",
+        "attr_endurance",
+        "attr_charisma",
+        "attr_intelligence",
+        "attr_agility",
+        "attr_luck",
+    ]
 
     form_args = {
         "player_uuid": {"default": generate_uuid},
         "balance": {"default": 100},
     }
 
-    form_overrides = {
-        "attributes": TextAreaField,
-    }
-
     form_widget_args = {
         "player_uuid": {"style": "text-transform: uppercase;"},
-        "attributes": {"rows": 8, "style": "font-family: monospace; font-size: 14px;"},
+    }
+
+    form_extra_fields = {
+        "attr_strength": IntegerField("💪 Сила"),
+        "attr_perception": IntegerField("👁 Восприятие"),
+        "attr_endurance": IntegerField("❤️ Выносливость"),
+        "attr_charisma": IntegerField("🗣 Харизма"),
+        "attr_intelligence": IntegerField("🧠 Интеллект"),
+        "attr_agility": IntegerField("🏃 Ловкость"),
+        "attr_luck": IntegerField("🍀 Удача"),
     }
 
     column_formatters = {
@@ -133,42 +154,30 @@ class UserAdmin(ModelView, model=User):
         if data.get("player_uuid"):
             data["player_uuid"] = data["player_uuid"].upper()
 
-        # parse attributes JSON string to dict
-        attrs = data.get("attributes")
-        if isinstance(attrs, str):
-            try:
-                data["attributes"] = json.loads(attrs)
-            except:
-                data["attributes"] = {}
+        # collect attributes from extra fields
+        attrs = {}
+        for key in ["strength", "perception", "endurance", "charisma", "intelligence", "agility", "luck"]:
+            field_name = f"attr_{key}"
+            val = data.pop(field_name, None)
+            if val is not None:
+                attrs[key] = int(val)
+        if attrs:
+            data["attributes"] = attrs
 
     async def edit_form(self, obj):
         form = await super().edit_form(obj)
-        # format attributes as pretty JSON for editing
         if obj and obj.attributes:
             attrs = obj.attributes
-            if isinstance(attrs, dict):
-                form.attributes.data = json.dumps(attrs, ensure_ascii=False, indent=2)
-            elif isinstance(attrs, str):
+            if isinstance(attrs, str):
                 try:
-                    parsed = json.loads(attrs)
-                    form.attributes.data = json.dumps(parsed, ensure_ascii=False, indent=2)
+                    attrs = json.loads(attrs)
                 except:
-                    form.attributes.data = attrs
-        return form
-
-    async def scaffold_form(self):
-        form = await super().scaffold_form()
-        # set default for new users
-        if hasattr(form, "attributes"):
-            form.attributes.kwargs["default"] = json.dumps({
-                "strength": 5,
-                "perception": 5,
-                "endurance": 5,
-                "charisma": 5,
-                "intelligence": 5,
-                "agility": 5,
-                "luck": 5
-            }, indent=2)
+                    attrs = {}
+            if isinstance(attrs, dict):
+                for key in ["strength", "perception", "endurance", "charisma", "intelligence", "agility", "luck"]:
+                    field_name = f"attr_{key}"
+                    if hasattr(form, field_name):
+                        getattr(form, field_name).data = attrs.get(key)
         return form
 
 

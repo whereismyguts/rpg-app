@@ -144,6 +144,8 @@ class DatabaseService:
         for attr_config in config:
             attr_name = attr_config["attribute_name"]
             value = user_attrs.get(attr_name)
+            if value is None:
+                value = 0
             attributes.append({
                 "name": attr_name,
                 "display_name": attr_config.get("display_name", attr_name),
