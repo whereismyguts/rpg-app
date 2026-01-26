@@ -198,6 +198,7 @@ class DatabaseService:
             return [perk.to_dict() for perk in result.scalars().all()]
 
     async def has_user_perk(self, player_uuid: str, perk_id: str) -> bool:
+        """Check if specific user has this perk."""
         async with async_session() as session:
             result = await session.execute(
                 select(UserPerk)
@@ -208,17 +209,33 @@ class DatabaseService:
             )
             return result.scalar_one_or_none() is not None
 
-    async def apply_perk(self, player_uuid: str, perk_id: str) -> bool:
+    async def is_perk_taken(self, perk_id: str) -> bool:
+        """Check if any user has this perk (for unique perks)."""
+        async with async_session() as session:
+            result = await session.execute(
+                select(UserPerk)
+                .join(Perk)
+                .where(Perk.perk_id == perk_id)
+            )
+            return result.scalar_one_or_none() is not None
+
+    async def apply_perk(self, player_uuid: str, perk_id: str) -> tuple[bool, str]:
+        """Apply perk to user. Returns (success, error_message)."""
         perk = await self.get_perk_by_id(perk_id)
         if not perk:
-            return False
+            return False, "perk_not_found"
 
-        if perk.get("one_time") and await self.has_user_perk(player_uuid, perk_id):
-            return False
+        # check if user already has this perk
+        if await self.has_user_perk(player_uuid, perk_id):
+            return False, "already_applied"
+
+        # check if unique perk is taken by anyone
+        if perk.get("one_time") and await self.is_perk_taken(perk_id):
+            return False, "perk_taken"
 
         user = await self.get_user_by_uuid(player_uuid)
         if not user:
-            return False
+            return False, "user_not_found"
 
         async with async_session() as session:
             # get user and perk objects
@@ -252,7 +269,7 @@ class DatabaseService:
             session.add(user_perk)
             await session.commit()
 
-        return True
+        return True, ""
 
     async def get_user_perks(self, player_uuid: str) -> list[dict]:
         async with async_session() as session:

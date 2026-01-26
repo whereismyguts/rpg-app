@@ -51,13 +51,15 @@ async def apply_perk(request: ApplyPerkRequest):
     if not perk:
         raise HTTPException(status_code=404, detail="Perk not found")
 
-    # check if one_time and already applied
-    if perk.get("one_time") and await db_service.has_user_perk(request.player_uuid, request.perk_id):
-        raise HTTPException(status_code=400, detail="Perk already applied")
-
-    success = await db_service.apply_perk(request.player_uuid, request.perk_id)
+    success, error = await db_service.apply_perk(request.player_uuid, request.perk_id)
     if not success:
-        raise HTTPException(status_code=500, detail="Failed to apply perk")
+        error_messages = {
+            "already_applied": "Перк уже применён",
+            "perk_taken": "Перк уже занят другим игроком",
+            "perk_not_found": "Перк не найден",
+            "user_not_found": "Пользователь не найден",
+        }
+        raise HTTPException(status_code=400, detail=error_messages.get(error, "Ошибка применения перка"))
 
     # log perk transaction
     await db_service.log_transaction(
