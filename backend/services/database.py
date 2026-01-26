@@ -2,7 +2,7 @@
 
 import json
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 
 from sqlalchemy import select, desc
@@ -10,9 +10,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from models import (
-    User, Attribute, Item, Perk, UserPerk, Trader, Transaction,
+    User, Attribute, Item, ActiveEffect, Perk, UserPerk, Trader, Transaction,
     async_session
 )
+from models.base import now_local
 
 
 class DatabaseService:
@@ -134,15 +135,26 @@ class DatabaseService:
         # attributes should be dict from JSONB column
         user_attrs = user.get("attributes") or {}
 
+        # get active effects for temporary bonuses
+        active_effects = await self.get_user_active_effects(player_uuid)
+        effect_bonuses = {}
+        for effect in active_effects:
+            if effect["effect_type"].startswith("attr_"):
+                attr_name = effect["effect_type"][5:]
+                effect_bonuses[attr_name] = effect_bonuses.get(attr_name, 0) + effect["effect_value"]
+
         for attr_config in config:
             attr_name = attr_config["attribute_name"]
-            value = user_attrs.get(attr_name)
-            if value is None:
-                value = 0
+            base_value = user_attrs.get(attr_name)
+            if base_value is None:
+                base_value = 0
+            bonus = effect_bonuses.get(attr_name, 0)
             attributes.append({
                 "name": attr_name,
                 "display_name": attr_config.get("display_name", attr_name),
-                "value": value,
+                "value": base_value + bonus,
+                "base_value": base_value,
+                "bonus": bonus,
                 "max_value": int(attr_config.get("max_value", 10)),
                 "description": attr_config.get("description", ""),
             })
@@ -153,6 +165,7 @@ class DatabaseService:
             "profession": user.get("profession", ""),
             "band": user.get("band", ""),
             "attributes": attributes,
+            "active_effects": active_effects,
         }
 
     async def _update_user_attributes(self, player_uuid: str, attributes: dict) -> bool:
@@ -182,6 +195,83 @@ class DatabaseService:
                 select(Item).options(selectinload(Item.trader))
             )
             return [item.to_dict() for item in result.scalars().all()]
+
+    # Active effects methods
+    async def has_active_effect(self, player_uuid: str, item_id: str) -> bool:
+        """Check if user has active effect from this item."""
+        async with async_session() as session:
+            now = now_local()
+            result = await session.execute(
+                select(ActiveEffect)
+                .join(User)
+                .join(Item)
+                .where(User.player_uuid == player_uuid)
+                .where(Item.item_id == item_id)
+                .where(ActiveEffect.expires_at > now)
+            )
+            return result.scalar_one_or_none() is not None
+
+    async def apply_item_effect(self, player_uuid: str, item_id: str) -> bool:
+        """Apply temporary effect from item. Returns True if effect was applied."""
+        async with async_session() as session:
+            user_result = await session.execute(
+                select(User).where(User.player_uuid == player_uuid)
+            )
+            user = user_result.scalar_one_or_none()
+            if not user:
+                return False
+
+            item_result = await session.execute(
+                select(Item).where(Item.item_id == item_id)
+            )
+            item = item_result.scalar_one_or_none()
+            if not item or not item.effect_type or not item.effect_duration:
+                return False
+
+            now = now_local()
+            # check for existing active effect
+            existing = await session.execute(
+                select(ActiveEffect)
+                .where(ActiveEffect.user_id == user.id)
+                .where(ActiveEffect.item_id == item.id)
+                .where(ActiveEffect.expires_at > now)
+            )
+            if existing.scalar_one_or_none():
+                return False
+
+            # create new active effect
+            expires_at = now + timedelta(minutes=item.effect_duration)
+            effect = ActiveEffect(
+                user_id=user.id,
+                item_id=item.id,
+                effect_type=item.effect_type,
+                effect_value=item.effect_value or 0,
+                expires_at=expires_at
+            )
+            session.add(effect)
+            await session.commit()
+            return True
+
+    async def get_user_active_effects(self, player_uuid: str) -> list[dict]:
+        """Get all active effects for user."""
+        async with async_session() as session:
+            now = now_local()
+            result = await session.execute(
+                select(ActiveEffect)
+                .options(selectinload(ActiveEffect.item))
+                .join(User)
+                .where(User.player_uuid == player_uuid)
+                .where(ActiveEffect.expires_at > now)
+            )
+            effects = []
+            for effect in result.scalars().all():
+                effects.append({
+                    "item_name": effect.item.name,
+                    "effect_type": effect.effect_type,
+                    "effect_value": effect.effect_value,
+                    "expires_at": effect.expires_at.isoformat(),
+                })
+            return effects
 
     # Perks methods
     async def get_perk_by_id(self, perk_id: str) -> Optional[dict]:

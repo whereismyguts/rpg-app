@@ -67,9 +67,15 @@ async def purchase_item(request: PurchaseRequest):
         description=f"Покупка: {item.get('name', request.item_id)}"
     )
 
+    # apply temporary effect if item has one
+    effect_applied = False
+    if item.get("effect_type") and item.get("effect_duration"):
+        effect_applied = await db_service.apply_item_effect(request.player_uuid, request.item_id)
+
     return {
         "success": True,
         "item": item,
         "paid": price,
-        "new_balance": new_balance
+        "new_balance": new_balance,
+        "effect_applied": effect_applied
     }

@@ -4,7 +4,7 @@ from .base import Base, async_session, engine, sync_engine, get_session, init_db
 from .user import User
 from .attribute import Attribute
 from .trader import Trader
-from .item import Item
+from .item import Item, ActiveEffect
 from .perk import Perk, UserPerk
 from .transaction import Transaction
 
@@ -19,6 +19,7 @@ __all__ = [
     "Attribute",
     "Trader",
     "Item",
+    "ActiveEffect",
     "Perk",
     "UserPerk",
     "Transaction",

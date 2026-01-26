@@ -10,6 +10,7 @@ from .base import Base, now_local
 
 if TYPE_CHECKING:
     from .perk import UserPerk
+    from .item import ActiveEffect
 
 
 class User(Base):
@@ -26,6 +27,7 @@ class User(Base):
     created_at = mapped_column(DateTime, default=now_local)
 
     user_perks: Mapped[list["UserPerk"]] = relationship("UserPerk", back_populates="user")
+    active_effects: Mapped[list["ActiveEffect"]] = relationship("ActiveEffect", back_populates="user")
 
     def __str__(self) -> str:
         return f"{self.name} ({self.player_uuid})"

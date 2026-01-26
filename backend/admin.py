@@ -36,7 +36,7 @@ EFFECT_TYPE_CHOICES = [
 ]
 
 from config.settings import settings
-from models import User, Attribute, Item, Perk, UserPerk, Trader, Transaction
+from models import User, Attribute, Item, ActiveEffect, Perk, UserPerk, Trader, Transaction
 from models.base import sync_engine
 
 
@@ -156,7 +156,7 @@ class ItemAdmin(ModelView, model=Item):
     name_plural = "Товары"
     icon = "fa-solid fa-box"
 
-    column_list = ["id", "qr_code", "image", "item_id", "name", "price", "trader", "description"]
+    column_list = ["id", "qr_code", "image", "item_id", "name", "price", "trader", "effect_type", "effect_duration", "description"]
     column_searchable_list = ["name", "item_id", "description"]
     column_sortable_list = ["id", "name", "price"]
     column_default_sort = [("name", False)]
@@ -171,11 +171,19 @@ class ItemAdmin(ModelView, model=Item):
         "trader": "Торговец",
         "description": "Описание",
         "image_url": "URL картинки",
+        "effect_type": "Тип эффекта",
+        "effect_value": "Значение",
+        "effect_duration": "Длительность (мин)",
+    }
+
+    form_overrides = {
+        "effect_type": SelectField,
     }
 
     form_args = {
         "item_id": {"default": lambda: f"ITEM_{generate_uuid()}"},
         "price": {"default": 10},
+        "effect_type": {"choices": EFFECT_TYPE_CHOICES, "coerce": str},
     }
 
     form_widget_args = {
@@ -187,6 +195,7 @@ class ItemAdmin(ModelView, model=Item):
         "qr_code": lambda m, a: format_qr("PAY", m.item_id),
         "image": lambda m, a: format_image(m.image_url),
         "price": lambda m, a: format_balance(m.price),
+        "effect_duration": lambda m, a: f"{m.effect_duration} мин" if m.effect_duration else "-",
     }
 
     async def on_model_change(self, data, model, is_created, request):
@@ -263,6 +272,26 @@ class UserPerkAdmin(ModelView, model=UserPerk):
         "user": "Игрок",
         "perk": "Перк",
         "applied_at": "Применён",
+    }
+
+
+class ActiveEffectAdmin(ModelView, model=ActiveEffect):
+    name = "Активный эффект"
+    name_plural = "Активные эффекты"
+    icon = "fa-solid fa-hourglass-half"
+
+    column_list = ["id", "user", "item", "effect_type", "effect_value", "applied_at", "expires_at"]
+    column_sortable_list = ["id", "applied_at", "expires_at"]
+    column_default_sort = [("expires_at", True)]
+
+    column_labels = {
+        "id": "ID",
+        "user": "Игрок",
+        "item": "Товар",
+        "effect_type": "Тип эффекта",
+        "effect_value": "Значение",
+        "applied_at": "Применён",
+        "expires_at": "Истекает",
     }
 
 
@@ -358,6 +387,7 @@ def setup_admin(app):
     admin.add_view(PerkAdmin)
     admin.add_view(TraderAdmin)
     admin.add_view(UserPerkAdmin)
+    admin.add_view(ActiveEffectAdmin)
     admin.add_view(TransactionAdmin)
     admin.add_view(AttributeAdmin)
 
