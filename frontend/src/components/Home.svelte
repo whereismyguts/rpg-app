@@ -13,16 +13,24 @@
   let stats = null;
   let expandedPerk = null;
   let expandedEffect = null;
+  let now = Date.now();
 
-  function formatTimeLeft(expiresAt) {
-    const now = new Date();
-    const expires = new Date(expiresAt);
-    const diff = expires - now;
+  // update timer every second
+  import { onDestroy } from 'svelte';
+  const timerInterval = setInterval(() => {
+    now = Date.now();
+  }, 1000);
+  onDestroy(() => clearInterval(timerInterval));
+
+  function formatTimeLeft(expiresAt, currentTime) {
+    const expires = new Date(expiresAt).getTime();
+    const diff = expires - currentTime;
     if (diff <= 0) return 'истёк';
-    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const minutes = Math.floor((diff % 3600000) / 60000);
     const seconds = Math.floor((diff % 60000) / 1000);
-    if (minutes > 0) return `${minutes} мин`;
-    return `${seconds} сек`;
+    if (hours > 0) return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    return `${minutes}:${String(seconds).padStart(2, '0')}`;
   }
 
   function toggleEffect(idx) {
@@ -154,7 +162,7 @@
             >
               <div class="effect-header">
                 <span class="effect-name">{effect.item_name}</span>
-                <span class="effect-timer">⏱ {formatTimeLeft(effect.expires_at)}</span>
+                <span class="effect-timer">⏱ {formatTimeLeft(effect.expires_at, now)}</span>
               </div>
               {#if expandedEffect === idx}
                 <div class="effect-details">
