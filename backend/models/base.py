@@ -53,5 +53,16 @@ async def get_session() -> AsyncSession:
 
 
 async def init_db():
+    from sqlalchemy import text
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
+        # migrations for new columns
+        migrations = [
+            "ALTER TABLE items ADD COLUMN IF NOT EXISTS effect_type VARCHAR(50)",
+            "ALTER TABLE items ADD COLUMN IF NOT EXISTS effect_value INTEGER",
+            "ALTER TABLE items ADD COLUMN IF NOT EXISTS effect_duration INTEGER",
+        ]
+        for sql in migrations:
+            await conn.execute(text(sql))
