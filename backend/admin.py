@@ -22,10 +22,22 @@ SPECIAL_ATTRIBUTES = [
 ]
 
 
-# effect type choices for perks
+# effect type choices for perks (includes balance)
 EFFECT_TYPE_CHOICES = [
     ("", "-- Выберите --"),
     ("balance", "💰 Баланс (крышки)"),
+    ("attr_strength", "💪 Сила"),
+    ("attr_perception", "👁 Восприятие"),
+    ("attr_endurance", "❤️ Выносливость"),
+    ("attr_charisma", "🗣 Харизма"),
+    ("attr_intelligence", "🧠 Интеллект"),
+    ("attr_agility", "🏃 Ловкость"),
+    ("attr_luck", "🍀 Удача"),
+]
+
+# effect type choices for items (only attributes, no balance)
+ITEM_EFFECT_TYPE_CHOICES = [
+    ("", "-- Выберите --"),
     ("attr_strength", "💪 Сила"),
     ("attr_perception", "👁 Восприятие"),
     ("attr_endurance", "❤️ Выносливость"),
@@ -183,7 +195,7 @@ class ItemAdmin(ModelView, model=Item):
     form_args = {
         "item_id": {"default": lambda: f"ITEM_{generate_uuid()}"},
         "price": {"default": 10},
-        "effect_type": {"choices": EFFECT_TYPE_CHOICES, "coerce": str},
+        "effect_type": {"choices": ITEM_EFFECT_TYPE_CHOICES, "coerce": str},
     }
 
     form_widget_args = {
