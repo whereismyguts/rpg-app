@@ -43,6 +43,13 @@
       <p style="margin-top: 8px;">Вы купили: {result.item.name}</p>
       <p style="margin-top: 8px;">Оплачено: {result.paid} крышек</p>
       <p style="margin-top: 8px;">Новый баланс: {result.new_balance} крышек</p>
+      {#if result.item.effect_type && result.item.effect_duration}
+        {#if result.effect_applied}
+          <p class="effect-applied">⚡ Эффект применён на {result.item.effect_duration} мин</p>
+        {:else}
+          <p class="effect-not-applied">⚠ Эффект не применён (уже активен)</p>
+        {/if}
+      {/if}
     </div>
     <button class="btn btn-block" on:click={() => dispatch('complete')}>
       [ ГОТОВО ]
@@ -62,6 +69,15 @@
         <span class="price-label">ЦЕНА:</span>
         <span class="price-value text-amber">{item.price} крышек</span>
       </div>
+      {#if item.effect_type && item.effect_duration}
+        <div class="item-effect">
+          <span class="effect-icon">⚡</span>
+          <span class="effect-info">
+            +{item.effect_value} {item.effect_type.replace('attr_', '').toUpperCase()}
+            на {item.effect_duration} мин
+          </span>
+        </div>
+      {/if}
     </div>
 
     <hr class="separator" />
@@ -157,5 +173,32 @@
 
   .actions .btn {
     flex: 1;
+  }
+
+  .item-effect {
+    margin-top: 12px;
+    padding: 8px;
+    background: rgba(255, 176, 0, 0.15);
+    border: 1px solid var(--terminal-amber);
+    color: var(--terminal-amber);
+  }
+
+  .effect-icon {
+    margin-right: 6px;
+  }
+
+  .effect-info {
+    font-size: 0.9rem;
+  }
+
+  .effect-applied {
+    margin-top: 12px;
+    color: var(--terminal-green);
+    font-weight: bold;
+  }
+
+  .effect-not-applied {
+    margin-top: 12px;
+    color: var(--terminal-amber);
   }
 </style>

@@ -12,6 +12,22 @@
   let userPerks = [];
   let stats = null;
   let expandedPerk = null;
+  let expandedEffect = null;
+
+  function formatTimeLeft(expiresAt) {
+    const now = new Date();
+    const expires = new Date(expiresAt);
+    const diff = expires - now;
+    if (diff <= 0) return 'истёк';
+    const minutes = Math.floor(diff / 60000);
+    const seconds = Math.floor((diff % 60000) / 1000);
+    if (minutes > 0) return `${minutes} мин`;
+    return `${seconds} сек`;
+  }
+
+  function toggleEffect(idx) {
+    expandedEffect = expandedEffect === idx ? null : idx;
+  }
 
   onMount(async () => {
     await refreshData();
@@ -89,6 +105,7 @@
               value={attr.value}
               max={attr.max_value}
               description={attr.description}
+              bonus={attr.bonus}
             />
           {/each}
         </div>
@@ -98,7 +115,7 @@
     {#if userPerks.length > 0}
       <hr class="separator" />
       <div class="perks-section">
-        <p class="section-title">АКТИВНЫЕ ПЕРКИ</p>
+        <p class="section-title">ПЕРКИ</p>
         <div class="perks-list">
           {#each userPerks as perk}
             <button
@@ -116,6 +133,33 @@
               {#if expandedPerk === perk.perk_id && perk.description}
                 <div class="perk-description">
                   {perk.description}
+                </div>
+              {/if}
+            </button>
+          {/each}
+        </div>
+      </div>
+    {/if}
+
+    {#if stats?.active_effects?.length > 0}
+      <hr class="separator" />
+      <div class="effects-section">
+        <p class="section-title">ВРЕМЕННЫЕ ЭФФЕКТЫ</p>
+        <div class="effects-list">
+          {#each stats.active_effects as effect, idx}
+            <button
+              class="effect-item"
+              class:expanded={expandedEffect === idx}
+              on:click={() => toggleEffect(idx)}
+            >
+              <div class="effect-header">
+                <span class="effect-name">{effect.item_name}</span>
+                <span class="effect-timer">⏱ {formatTimeLeft(effect.expires_at)}</span>
+              </div>
+              {#if expandedEffect === idx}
+                <div class="effect-details">
+                  <span class="effect-type">{effect.effect_type.replace('attr_', '').toUpperCase()}</span>
+                  <span class="effect-value">+{effect.effect_value}</span>
                 </div>
               {/if}
             </button>
@@ -274,5 +318,69 @@
   .qr-image {
     max-width: 160px;
     border: 2px solid var(--terminal-green);
+  }
+
+  .effects-section {
+    margin-top: 16px;
+  }
+
+  .effects-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .effect-item {
+    display: block;
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--terminal-amber);
+    background: rgba(255, 176, 0, 0.1);
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    color: var(--terminal-amber);
+    transition: all 0.2s ease;
+  }
+
+  .effect-item:hover {
+    background: rgba(255, 176, 0, 0.2);
+  }
+
+  .effect-item.expanded {
+    border-width: 2px;
+  }
+
+  .effect-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .effect-name {
+    font-size: 0.95rem;
+  }
+
+  .effect-timer {
+    font-size: 0.85rem;
+    opacity: 0.8;
+  }
+
+  .effect-details {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--terminal-amber);
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .effect-type {
+    font-size: 0.8rem;
+    opacity: 0.8;
+  }
+
+  .effect-value {
+    font-size: 1rem;
+    font-weight: bold;
   }
 </style>
