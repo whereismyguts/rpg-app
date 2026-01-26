@@ -397,3 +397,83 @@ input::placeholder {
 .confirm-actions .btn {
   flex: 1;
 }
+
+/* Landscape orientation */
+@media screen and (orientation: landscape) and (max-height: 500px) {
+  .page {
+    padding: 8px 16px;
+  }
+
+  .terminal {
+    padding: 10px 16px;
+  }
+
+  .terminal-header {
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+  }
+
+  .terminal-title {
+    font-size: 1.2rem;
+  }
+
+  .balance-display {
+    font-size: 1.8rem;
+    padding: 10px;
+  }
+
+  .stat-bar {
+    margin: 6px 0;
+    gap: 8px;
+  }
+
+  .stat-label {
+    width: 80px;
+    font-size: 0.8rem;
+  }
+
+  .stat-track {
+    height: 16px;
+  }
+
+  .stat-value {
+    font-size: 1.1rem;
+    width: 32px;
+  }
+
+  .user-info {
+    padding: 8px 16px;
+  }
+
+  .user-name {
+    font-size: 1.1rem;
+  }
+
+  .btn {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+  }
+
+  .form-group {
+    margin-bottom: 10px;
+  }
+
+  input, textarea {
+    padding: 8px 12px;
+  }
+
+  .qr-image {
+    max-width: 120px;
+  }
+
+  .separator {
+    margin: 10px 0;
+  }
+
+  /* two-column layout for stats in landscape */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 16px;
+  }
+}

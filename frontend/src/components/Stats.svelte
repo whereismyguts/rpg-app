@@ -45,13 +45,16 @@
 
     <hr class="separator" />
 
-    {#each stats.attributes as attr}
-      <AttributeBar
-        name={attr.display_name}
-        value={attr.value}
-        max={attr.max_value}
-        description={attr.description}
-      />
-    {/each}
+    <div class="stats-grid">
+      {#each stats.attributes as attr}
+        <AttributeBar
+          name={attr.display_name}
+          value={attr.value}
+          max={attr.max_value}
+          description={attr.description}
+          bonus={attr.bonus}
+        />
+      {/each}
+    </div>
   {/if}
 </div>
