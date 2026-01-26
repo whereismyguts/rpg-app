@@ -20,8 +20,17 @@ class AttributeItem(BaseModel):
     name: str
     display_name: str
     value: int
+    base_value: int = 0
+    bonus: int = 0
     max_value: int
     description: str
+
+
+class ActiveEffectItem(BaseModel):
+    item_name: str
+    effect_type: str
+    effect_value: int
+    expires_at: str
 
 
 class StatsResponse(BaseModel):
@@ -30,6 +39,7 @@ class StatsResponse(BaseModel):
     profession: str
     band: str
     attributes: list[AttributeItem]
+    active_effects: list[ActiveEffectItem] = []
 
 
 class QRResponse(BaseModel):
