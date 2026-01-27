@@ -473,7 +473,15 @@ class DatabaseService:
         async with async_session() as session:
             result = await session.execute(select(User))
             return [
-                {"player_uuid": u.player_uuid, "name": u.name}
+                {
+                    "id": u.id,
+                    "player_uuid": u.player_uuid,
+                    "name": u.name,
+                    "profession": u.profession or "",
+                    "balance": u.balance,
+                    "band": u.band or "",
+                    "telegram_id": u.telegram_id,
+                }
                 for u in result.scalars().all()
             ]
 
