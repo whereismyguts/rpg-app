@@ -131,10 +131,10 @@ body {
   color: var(--terminal-green);
   padding: 12px 24px;
   font-family: inherit;
-  font-size: 1rem;
+  font-size: 0.7rem;
   cursor: pointer;
   text-transform: uppercase;
-  letter-spacing: 2px;
+  letter-spacing: 1.5px;
   transition: all 0.2s ease;
   position: relative;
   overflow: hidden;
