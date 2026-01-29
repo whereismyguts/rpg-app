@@ -140,24 +140,25 @@
         class="spoiler-toggle"
         on:click={() => transactionsExpanded = !transactionsExpanded}
       >
-        <span class="section-title">ИСТОРИЯ ТРАНЗАКЦИЙ</span>
+        <span class="section-title">ИСТОРИЯ</span>
         <span class="spoiler-arrow">{transactionsExpanded ? '▼' : '▶'}</span>
       </button>
       {#if transactionsExpanded}
         <div class="transactions-list">
           {#if transactions.length === 0}
-            <p class="text-dim">Нет транзакций</p>
+            <p class="text-dim">Пока пусто</p>
           {:else}
             {#each transactions as tx}
               <div class="tx-item">
                 <div class="tx-row">
-                  <span class="tx-type">{tx.tx_type}</span>
-                  <span class="tx-amount" class:tx-income={tx.to_id === $auth.uuid} class:tx-expense={tx.from_id === $auth.uuid}>
-                    {tx.to_id === $auth.uuid ? '+' : '-'}{tx.amount}
-                  </span>
+                  <span class="tx-desc">{tx.description || ''}</span>
+                  {#if tx.amount > 0}
+                    <span class="tx-amount" class:tx-income={tx.to_id === $auth.uuid} class:tx-expense={tx.from_id === $auth.uuid}>
+                      {tx.to_id === $auth.uuid ? '+' : '-'}{tx.amount}
+                    </span>
+                  {/if}
                 </div>
                 <div class="tx-row tx-details">
-                  <span class="tx-desc">{tx.description || ''}</span>
                   <span class="tx-date">{formatTxDate(tx.timestamp)}</span>
                 </div>
               </div>
