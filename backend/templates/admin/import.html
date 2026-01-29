@@ -1,0 +1,86 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Импорт данных</h3>
+            </div>
+            <div class="card-body">
+                {% if message %}
+                <div class="alert alert-{{ 'success' if message_type == 'success' else 'danger' }}" role="alert">
+                    {{ message }}
+                </div>
+                {% endif %}
+
+                <form method="post" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label">Тип импорта</label>
+                        <select name="import_type" class="form-select" required>
+                            <option value="items">Товары (items.json)</option>
+                            <option value="perks">Перки (perks.json)</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">JSON файл</label>
+                        <input type="file" name="file" class="form-control" accept=".json" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa-solid fa-upload"></i> Импортировать
+                    </button>
+                </form>
+
+                <hr class="my-4">
+
+                <h5>Формат файлов</h5>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>items.json</h6>
+                        <pre class="bg-light p-3 rounded"><code>[
+  {
+    "item_id": "STIMPAK",
+    "name": "Стимпак",
+    "description": "Восстанавливает здоровье",
+    "price": 25,
+    "trader_id": "TRADER1",
+    "effect_type": "attr_endurance",
+    "effect_value": 2,
+    "effect_duration": 30
+  }
+]</code></pre>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>perks.json</h6>
+                        <pre class="bg-light p-3 rounded"><code>[
+  {
+    "perk_id": "STRONG_BACK",
+    "name": "Крепкая спина",
+    "description": "+2 к силе",
+    "one_time": true,
+    "effect_type": "attr_strength",
+    "effect_value": 2
+  }
+]</code></pre>
+                    </div>
+                </div>
+
+                <h6 class="mt-3">Типы эффектов</h6>
+                <ul class="list-unstyled">
+                    <li><code>attr_strength</code> - Сила</li>
+                    <li><code>attr_perception</code> - Восприятие</li>
+                    <li><code>attr_endurance</code> - Выносливость</li>
+                    <li><code>attr_charisma</code> - Харизма</li>
+                    <li><code>attr_intelligence</code> - Интеллект</li>
+                    <li><code>attr_agility</code> - Ловкость</li>
+                    <li><code>attr_luck</code> - Удача</li>
+                    <li><code>balance</code> - Крышки (только для перков)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -8,6 +8,7 @@ from starlette.requests import Request
 from wtforms import TextAreaField, SelectField, IntegerField, Form
 from wtforms.validators import Optional, NumberRange
 import json
+from sqlalchemy import select
 
 
 # SPECIAL attributes
@@ -382,6 +383,131 @@ class TransactionAdmin(ModelView, model=Transaction):
     }
 
 
+from sqladmin import BaseView, expose
+
+
+class ImportView(BaseView):
+    name = "Импорт"
+    icon = "fa-solid fa-file-import"
+
+    @expose("/import", methods=["GET", "POST"])
+    async def import_page(self, request: Request):
+        message = None
+        message_type = None
+
+        if request.method == "POST":
+            form = await request.form()
+            import_type = form.get("import_type")
+            file = form.get("file")
+
+            if file and file.filename:
+                content = await file.read()
+                try:
+                    data = json.loads(content)
+                    if not isinstance(data, list):
+                        raise ValueError("JSON must be array")
+
+                    from models import async_session as get_session
+                    from sqlalchemy.ext.asyncio import AsyncSession
+
+                    created = 0
+                    updated = 0
+
+                    async with get_session() as session:
+                        if import_type == "items":
+                            # get trader mapping
+                            traders_result = await session.execute(select(Trader))
+                            traders = {t.trader_id: t.id for t in traders_result.scalars().all()}
+
+                            for item_data in data:
+                                item_id = item_data.get("item_id")
+                                if not item_id:
+                                    continue
+
+                                result = await session.execute(
+                                    select(Item).where(Item.item_id == item_id)
+                                )
+                                existing = result.scalar_one_or_none()
+
+                                trader_db_id = None
+                                if item_data.get("trader_id"):
+                                    trader_db_id = traders.get(item_data["trader_id"])
+
+                                if existing:
+                                    existing.name = item_data.get("name", existing.name)
+                                    existing.description = item_data.get("description", existing.description)
+                                    existing.price = item_data.get("price", existing.price)
+                                    existing.trader_id = trader_db_id
+                                    existing.effect_type = item_data.get("effect_type")
+                                    existing.effect_value = item_data.get("effect_value")
+                                    existing.effect_duration = item_data.get("effect_duration")
+                                    updated += 1
+                                else:
+                                    item = Item(
+                                        item_id=item_id,
+                                        name=item_data.get("name", item_id),
+                                        description=item_data.get("description"),
+                                        price=item_data.get("price", 0),
+                                        trader_id=trader_db_id,
+                                        effect_type=item_data.get("effect_type"),
+                                        effect_value=item_data.get("effect_value"),
+                                        effect_duration=item_data.get("effect_duration"),
+                                    )
+                                    session.add(item)
+                                    created += 1
+
+                        elif import_type == "perks":
+                            for perk_data in data:
+                                perk_id = perk_data.get("perk_id")
+                                if not perk_id:
+                                    continue
+
+                                result = await session.execute(
+                                    select(Perk).where(Perk.perk_id == perk_id)
+                                )
+                                existing = result.scalar_one_or_none()
+
+                                if existing:
+                                    existing.name = perk_data.get("name", existing.name)
+                                    existing.description = perk_data.get("description", existing.description)
+                                    existing.one_time = perk_data.get("one_time", existing.one_time)
+                                    existing.effect_type = perk_data.get("effect_type")
+                                    existing.effect_value = perk_data.get("effect_value")
+                                    updated += 1
+                                else:
+                                    perk = Perk(
+                                        perk_id=perk_id,
+                                        name=perk_data.get("name", perk_id),
+                                        description=perk_data.get("description"),
+                                        one_time=perk_data.get("one_time", False),
+                                        effect_type=perk_data.get("effect_type"),
+                                        effect_value=perk_data.get("effect_value"),
+                                    )
+                                    session.add(perk)
+                                    created += 1
+
+                        await session.commit()
+
+                    message = f"Импорт завершён: создано {created}, обновлено {updated}"
+                    message_type = "success"
+
+                except json.JSONDecodeError:
+                    message = "Ошибка: неверный формат JSON"
+                    message_type = "error"
+                except Exception as e:
+                    message = f"Ошибка: {str(e)}"
+                    message_type = "error"
+            else:
+                message = "Выберите файл"
+                message_type = "error"
+
+        return await self.templates.TemplateResponse(
+            request,
+            "import.html",
+            context={"message": message, "message_type": message_type},
+        )
+
+
 def setup_admin(app):
     """Setup SQLAdmin with all models."""
     authentication_backend = AdminAuth(secret_key=settings.secret_key)
@@ -392,6 +518,7 @@ def setup_admin(app):
         authentication_backend=authentication_backend,
         title="RPG Admin",
         base_url="/admin",
+        templates_dir="templates/admin",
     )
 
     admin.add_view(UserAdmin)
@@ -402,5 +529,6 @@ def setup_admin(app):
     admin.add_view(ActiveEffectAdmin)
     admin.add_view(TransactionAdmin)
     admin.add_view(AttributeAdmin)
+    admin.add_view(ImportView)
 
     return admin
