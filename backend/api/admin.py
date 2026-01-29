@@ -236,6 +236,68 @@ class SetImageUrlRequest(BaseModel):
     image_url: str
 
 
+class UpdateUserRequest(BaseModel):
+    name: Optional[str] = None
+    profession: Optional[str] = None
+    band: Optional[str] = None
+    balance: Optional[int] = None
+    attributes: Optional[dict] = None
+
+
+@router.get("/user/{player_uuid}")
+async def get_user_details(player_uuid: str):
+    """Get user details including attributes."""
+    async with async_session() as session:
+        result = await session.execute(
+            select(User).where(User.player_uuid == player_uuid.upper())
+        )
+        user = result.scalar_one_or_none()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        return {
+            "player_uuid": user.player_uuid,
+            "name": user.name,
+            "profession": user.profession or "",
+            "band": user.band or "",
+            "balance": user.balance,
+            "telegram_id": user.telegram_id,
+            "attributes": user.attributes or {}
+        }
+
+
+@router.put("/user/{player_uuid}")
+async def update_user(player_uuid: str, request: UpdateUserRequest):
+    """Update user including attributes."""
+    async with async_session() as session:
+        result = await session.execute(
+            select(User).where(User.player_uuid == player_uuid.upper())
+        )
+        user = result.scalar_one_or_none()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        if request.name is not None:
+            user.name = request.name
+        if request.profession is not None:
+            user.profession = request.profession
+        if request.band is not None:
+            user.band = request.band
+        if request.balance is not None:
+            user.balance = request.balance
+        if request.attributes is not None:
+            user.attributes = request.attributes
+
+        await session.commit()
+        return {"success": True}
+
+
+@router.get("/attributes")
+async def get_attribute_config():
+    """Get attribute configuration."""
+    config = await db_service.get_attribute_config()
+    return {"attributes": config}
+
+
 @router.post("/set-image-url")
 async def set_image_url(request: SetImageUrlRequest):
     """Set image URL for an entity directly."""
@@ -260,3 +322,144 @@ async def set_image_url(request: SetImageUrlRequest):
         raise HTTPException(status_code=500, detail="Failed to save image URL")
 
     return {"success": True, "url": request.image_url}
+
+
+@router.post("/import/items")
+async def import_items(file: UploadFile = File(...)):
+    """Bulk import items from JSON file."""
+    if not file.filename.endswith(".json"):
+        raise HTTPException(status_code=400, detail="File must be JSON")
+
+    import json
+    content = await file.read()
+    try:
+        items_data = json.loads(content)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON")
+
+    if not isinstance(items_data, list):
+        raise HTTPException(status_code=400, detail="JSON must be array of items")
+
+    created = 0
+    updated = 0
+    errors = []
+
+    async with async_session() as session:
+        # get trader mapping
+        traders_result = await session.execute(select(Trader))
+        traders = {t.trader_id: t.id for t in traders_result.scalars().all()}
+
+        for idx, item_data in enumerate(items_data):
+            try:
+                item_id = item_data.get("item_id")
+                if not item_id:
+                    errors.append(f"Row {idx}: missing item_id")
+                    continue
+
+                # check if exists
+                result = await session.execute(
+                    select(Item).where(Item.item_id == item_id)
+                )
+                existing = result.scalar_one_or_none()
+
+                trader_db_id = None
+                if item_data.get("trader_id"):
+                    trader_db_id = traders.get(item_data["trader_id"])
+
+                if existing:
+                    existing.name = item_data.get("name", existing.name)
+                    existing.description = item_data.get("description", existing.description)
+                    existing.price = item_data.get("price", existing.price)
+                    existing.trader_id = trader_db_id
+                    existing.effect_type = item_data.get("effect_type")
+                    existing.effect_value = item_data.get("effect_value")
+                    existing.effect_duration = item_data.get("effect_duration")
+                    updated += 1
+                else:
+                    item = Item(
+                        item_id=item_id,
+                        name=item_data.get("name", item_id),
+                        description=item_data.get("description"),
+                        price=item_data.get("price", 0),
+                        trader_id=trader_db_id,
+                        effect_type=item_data.get("effect_type"),
+                        effect_value=item_data.get("effect_value"),
+                        effect_duration=item_data.get("effect_duration"),
+                    )
+                    session.add(item)
+                    created += 1
+            except Exception as e:
+                errors.append(f"Row {idx}: {str(e)}")
+
+        await session.commit()
+
+    return {
+        "success": True,
+        "created": created,
+        "updated": updated,
+        "errors": errors
+    }
+
+
+@router.post("/import/perks")
+async def import_perks(file: UploadFile = File(...)):
+    """Bulk import perks from JSON file."""
+    if not file.filename.endswith(".json"):
+        raise HTTPException(status_code=400, detail="File must be JSON")
+
+    import json
+    content = await file.read()
+    try:
+        perks_data = json.loads(content)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON")
+
+    if not isinstance(perks_data, list):
+        raise HTTPException(status_code=400, detail="JSON must be array of perks")
+
+    created = 0
+    updated = 0
+    errors = []
+
+    async with async_session() as session:
+        for idx, perk_data in enumerate(perks_data):
+            try:
+                perk_id = perk_data.get("perk_id")
+                if not perk_id:
+                    errors.append(f"Row {idx}: missing perk_id")
+                    continue
+
+                result = await session.execute(
+                    select(Perk).where(Perk.perk_id == perk_id)
+                )
+                existing = result.scalar_one_or_none()
+
+                if existing:
+                    existing.name = perk_data.get("name", existing.name)
+                    existing.description = perk_data.get("description", existing.description)
+                    existing.one_time = perk_data.get("one_time", existing.one_time)
+                    existing.effect_type = perk_data.get("effect_type")
+                    existing.effect_value = perk_data.get("effect_value")
+                    updated += 1
+                else:
+                    perk = Perk(
+                        perk_id=perk_id,
+                        name=perk_data.get("name", perk_id),
+                        description=perk_data.get("description"),
+                        one_time=perk_data.get("one_time", False),
+                        effect_type=perk_data.get("effect_type"),
+                        effect_value=perk_data.get("effect_value"),
+                    )
+                    session.add(perk)
+                    created += 1
+            except Exception as e:
+                errors.append(f"Row {idx}: {str(e)}")
+
+        await session.commit()
+
+    return {
+        "success": True,
+        "created": created,
+        "updated": updated,
+        "errors": errors
+    }
