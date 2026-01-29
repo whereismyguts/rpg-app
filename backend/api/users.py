@@ -99,3 +99,14 @@ async def lookup_user(player_uuid: str = Query(...)):
         profession=user.get("profession", ""),
         band=user.get("band", ""),
     )
+
+
+@router.get("/transactions")
+async def get_user_transactions(player_uuid: str = Query(...), limit: int = Query(50)):
+    """Get user's transaction history."""
+    user = await db_service.get_user_by_uuid(player_uuid.upper())
+    if not user:
+        raise HTTPException(404, "User not found")
+
+    transactions = await db_service.get_user_transactions(player_uuid.upper(), limit)
+    return {"transactions": transactions}

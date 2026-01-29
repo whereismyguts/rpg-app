@@ -110,6 +110,10 @@ class ApiClient {
   async getMyPerks() {
     return this.request(`/perks/user/${this.playerUuid}`);
   }
+
+  async getMyTransactions(limit = 50) {
+    return this.request(`/users/transactions?player_uuid=${this.playerUuid}&limit=${limit}`);
+  }
 }
 
 export const api = new ApiClient();
