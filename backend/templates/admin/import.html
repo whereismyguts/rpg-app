@@ -24,8 +24,8 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">JSON файл</label>
-                        <input type="file" name="file" class="form-control" accept=".json" required>
+                        <label class="form-label">Файл (JSON или CSV)</label>
+                        <input type="file" name="file" class="form-control" accept=".json,.csv" required>
                     </div>
 
                     <button type="submit" class="btn btn-primary">
@@ -37,10 +37,35 @@
 
                 <h5>Формат файлов</h5>
 
-                <div class="row">
-                    <div class="col-md-6">
-                        <h6>items.json</h6>
-                        <pre class="bg-light p-3 rounded"><code>[
+                <ul class="nav nav-tabs mb-3" role="tablist">
+                    <li class="nav-item">
+                        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#csv-tab">CSV</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#json-tab">JSON</button>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="csv-tab">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>items.csv</h6>
+                                <pre class="bg-light p-3 rounded"><code>item_id,name,description,price,trader_id,effect_type,effect_value,effect_duration
+STIMPAK,Стимпак,Восстанавливает здоровье,25,TRADER1,attr_endurance,2,30</code></pre>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>perks.csv</h6>
+                                <pre class="bg-light p-3 rounded"><code>perk_id,name,description,one_time,effect_type,effect_value
+STRONG_BACK,Крепкая спина,+2 к силе,true,attr_strength,2</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="json-tab">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>items.json</h6>
+                                <pre class="bg-light p-3 rounded"><code>[
   {
     "item_id": "STIMPAK",
     "name": "Стимпак",
@@ -52,10 +77,10 @@
     "effect_duration": 30
   }
 ]</code></pre>
-                    </div>
-                    <div class="col-md-6">
-                        <h6>perks.json</h6>
-                        <pre class="bg-light p-3 rounded"><code>[
+                            </div>
+                            <div class="col-md-6">
+                                <h6>perks.json</h6>
+                                <pre class="bg-light p-3 rounded"><code>[
   {
     "perk_id": "STRONG_BACK",
     "name": "Крепкая спина",
@@ -65,6 +90,8 @@
     "effect_value": 2
   }
 ]</code></pre>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

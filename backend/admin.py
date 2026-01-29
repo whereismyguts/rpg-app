@@ -7,6 +7,8 @@ from sqladmin.authentication import AuthenticationBackend
 from starlette.requests import Request
 from wtforms import TextAreaField, SelectField, IntegerField, Form
 from wtforms.validators import Optional, NumberRange
+import csv
+import io
 import json
 from sqlalchemy import select
 
@@ -403,9 +405,28 @@ class ImportView(BaseView):
             if file and file.filename:
                 content = await file.read()
                 try:
-                    data = json.loads(content)
-                    if not isinstance(data, list):
-                        raise ValueError("JSON must be array")
+                    # parse JSON or CSV
+                    if file.filename.endswith(".csv"):
+                        text = content.decode("utf-8")
+                        reader = csv.DictReader(io.StringIO(text))
+                        data = []
+                        for row in reader:
+                            # convert types
+                            clean_row = {}
+                            for k, v in row.items():
+                                if v == "" or v is None:
+                                    clean_row[k] = None
+                                elif k in ("price", "effect_value", "effect_duration"):
+                                    clean_row[k] = int(v) if v else None
+                                elif k == "one_time":
+                                    clean_row[k] = v.lower() in ("true", "1", "yes")
+                                else:
+                                    clean_row[k] = v
+                            data.append(clean_row)
+                    else:
+                        data = json.loads(content)
+                        if not isinstance(data, list):
+                            raise ValueError("JSON must be array")
 
                     from models import async_session as get_session
                     from sqlalchemy.ext.asyncio import AsyncSession
