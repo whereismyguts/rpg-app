@@ -37,6 +37,7 @@ class StatsResponse(BaseModel):
     player_uuid: str
     name: str
     profession: str
+    role_description: str = ""
     band: str
     attributes: list[AttributeItem]
     active_effects: list[ActiveEffectItem] = []

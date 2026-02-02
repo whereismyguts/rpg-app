@@ -16,6 +16,7 @@
   let expandedEffect = null;
   let transactionsExpanded = false;
   let statsExpanded = false;
+  let showRoleDescription = false;
   let now = Date.now();
 
   // update timer every second
@@ -87,7 +88,12 @@
   <div class="terminal-header">
     <h2 class="terminal-title">{$auth.name}</h2>
     {#if stats?.profession}
-      <p class="profession">{stats.profession}</p>
+      <div class="profession-row">
+        <p class="profession">{stats.profession}</p>
+        {#if stats?.role_description}
+          <button class="btn-info" on:click={() => showRoleDescription = true} title="Описание роли">?</button>
+        {/if}
+      </div>
     {/if}
     {#if stats?.band}
       <p class="text-dim band-info">Группировка: {stats.band}</p>
@@ -264,11 +270,55 @@
   {/if}
 </div>
 
+{#if showRoleDescription && stats?.role_description}
+  <div class="modal-overlay" on:click={() => showRoleDescription = false} on:keydown={(e) => e.key === 'Escape' && (showRoleDescription = false)}>
+    <div class="modal-content" on:click|stopPropagation>
+      <div class="modal-header">
+        <h3>Описание роли</h3>
+        <button class="modal-close" on:click={() => showRoleDescription = false}>&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="role-description-text">{stats.role_description}</p>
+      </div>
+    </div>
+  </div>
+{/if}
+
 <style>
+  .profession-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
   .profession {
     font-size: 0.85rem;
     color: var(--terminal-green-dim);
-    margin-top: 4px;
+    margin: 0;
+  }
+
+  .btn-info {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 1px solid var(--terminal-green-dim);
+    background: transparent;
+    color: var(--terminal-green);
+    font-size: 0.75rem;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    font-family: inherit;
+  }
+
+  .btn-info:hover {
+    border-color: var(--terminal-green);
+    background: rgba(20, 255, 0, 0.1);
   }
 
   .band-info {
@@ -541,5 +591,68 @@
   .effect-value {
     font-size: 1rem;
     font-weight: bold;
+  }
+
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+  }
+
+  .modal-content {
+    background: var(--terminal-bg, #0a0a0a);
+    border: 2px solid var(--terminal-green);
+    max-width: 500px;
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--terminal-green-dim);
+  }
+
+  .modal-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: var(--terminal-amber);
+  }
+
+  .modal-close {
+    background: transparent;
+    border: none;
+    color: var(--terminal-green);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+  }
+
+  .modal-close:hover {
+    color: var(--terminal-amber);
+  }
+
+  .modal-body {
+    padding: 16px;
+  }
+
+  .role-description-text {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: var(--terminal-green);
+    white-space: pre-wrap;
+    margin: 0;
   }
 </style>

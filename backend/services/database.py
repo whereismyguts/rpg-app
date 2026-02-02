@@ -163,6 +163,7 @@ class DatabaseService:
             "player_uuid": user["player_uuid"],
             "name": user["name"],
             "profession": user.get("profession", ""),
+            "role_description": user.get("role_description", ""),
             "band": user.get("band", ""),
             "attributes": attributes,
             "active_effects": active_effects,

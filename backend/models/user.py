@@ -21,6 +21,7 @@ class User(Base):
     player_uuid: Mapped[str] = mapped_column(String(8), unique=True, nullable=False)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     profession: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    role_description: Mapped[str | None] = mapped_column(String(2000), nullable=True)
     balance: Mapped[int] = mapped_column(Integer, default=100)
     band: Mapped[str | None] = mapped_column(String(100), nullable=True)
     attributes: Mapped[dict] = mapped_column(JSONB, default=dict)
@@ -38,6 +39,7 @@ class User(Base):
             "player_uuid": self.player_uuid,
             "name": self.name,
             "profession": self.profession or "",
+            "role_description": self.role_description or "",
             "balance": self.balance,
             "band": self.band or "",
             "attributes": self.attributes or {},
