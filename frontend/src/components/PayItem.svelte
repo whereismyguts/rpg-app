@@ -23,6 +23,9 @@
     try {
       result = await api.purchaseItem(item.item_id);
       auth.updateBalance(result.new_balance);
+      if (result.new_hp !== null && result.new_hp !== undefined) {
+        auth.updateHp(result.new_hp);
+      }
       success = true;
     } catch (e) {
       error = e.message;
@@ -43,6 +46,9 @@
       <p style="margin-top: 8px;">Вы купили: {result.item.name}</p>
       <p style="margin-top: 8px;">Оплачено: {result.paid} крышек</p>
       <p style="margin-top: 8px;">Новый баланс: {result.new_balance} крышек</p>
+      {#if result.hp_restored > 0}
+        <p class="hp-restored">❤️ +{result.hp_restored} HP (HP: {result.new_hp})</p>
+      {/if}
       {#if result.item.effect_type && result.item.effect_duration}
         {#if result.effect_applied}
           <p class="effect-applied">⚡ Эффект применён на {result.item.effect_duration} мин</p>
@@ -69,6 +75,14 @@
         <span class="price-label">ЦЕНА:</span>
         <span class="price-value text-amber">{item.price} крышек</span>
       </div>
+      {#if item.hp_restore > 0}
+        <div class="item-effect item-hp-restore">
+          <span class="effect-icon">❤️</span>
+          <span class="effect-info">
+            +{item.hp_restore} HP
+          </span>
+        </div>
+      {/if}
       {#if item.effect_type && item.effect_duration}
         <div class="item-effect">
           <span class="effect-icon">⚡</span>
@@ -200,5 +214,17 @@
   .effect-not-applied {
     margin-top: 12px;
     color: var(--terminal-amber);
+  }
+
+  .item-hp-restore {
+    background: rgba(255, 80, 80, 0.15);
+    border: 1px solid #ff5050;
+    color: #ff5050;
+  }
+
+  .hp-restored {
+    margin-top: 12px;
+    color: #ff5050;
+    font-weight: bold;
   }
 </style>

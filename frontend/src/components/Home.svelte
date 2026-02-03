@@ -108,7 +108,7 @@
   {:else}
     <div class="stats-display">
       <div class="stat-item">
-        <span class="stat-value hp-value">❤️ {$auth.hp}</span>
+        <span class="stat-value hp-value">{$auth.hp}</span>
         <span class="stat-label">HP</span>
       </div>
       <div class="stat-item">
