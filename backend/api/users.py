@@ -22,6 +22,11 @@ class DamageRequest(BaseModel):
     amount: int = 1
 
 
+class HealRequest(BaseModel):
+    target_uuid: str
+    amount: int = 1
+
+
 class RespawnRequest(BaseModel):
     player_uuid: str
 
@@ -152,6 +157,36 @@ async def deal_damage(request: DamageRequest):
         "damage": request.amount,
         "new_hp": new_hp,
         "is_dead": new_hp <= 0
+    }
+
+
+@router.post("/heal")
+async def heal_player(request: HealRequest):
+    """Heal a player."""
+    target = await db_service.get_user_by_uuid(request.target_uuid.upper())
+    if not target:
+        raise HTTPException(404, "Target not found")
+
+    if target.get("hp", 100) <= 0:
+        raise HTTPException(400, "Нельзя лечить мёртвого игрока")
+
+    new_hp = await db_service.heal_hp(request.target_uuid.upper(), request.amount)
+
+    await db_service.log_transaction(
+        from_type="system",
+        from_id="HEAL",
+        to_type="player",
+        to_id=request.target_uuid.upper(),
+        amount=request.amount,
+        tx_type="heal",
+        description=f"Восстановлено HP: {request.amount}"
+    )
+
+    return {
+        "success": True,
+        "target_uuid": request.target_uuid.upper(),
+        "healed": request.amount,
+        "new_hp": new_hp
     }
 
 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Урон - Vault-Tec</title>
+  <title>HP Control - Vault-Tec</title>
   <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -115,6 +115,48 @@
       color: var(--terminal-dark);
     }
 
+    .btn-heal {
+      border-color: #00ff88;
+      color: #00ff88;
+    }
+
+    .btn-heal:hover:not(:disabled) {
+      background: #00ff88;
+      color: var(--terminal-dark);
+    }
+
+    .mode-toggle {
+      display: flex;
+      gap: 0;
+      margin-bottom: 16px;
+    }
+
+    .mode-btn {
+      flex: 1;
+      padding: 12px;
+      border: 2px solid var(--terminal-green-dim);
+      background: transparent;
+      color: var(--terminal-green-dim);
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    .mode-btn:first-child {
+      border-right: none;
+    }
+
+    .mode-btn.active-damage {
+      border-color: var(--error-red);
+      color: var(--error-red);
+      background: rgba(255, 68, 68, 0.1);
+    }
+
+    .mode-btn.active-heal {
+      border-color: #00ff88;
+      color: #00ff88;
+      background: rgba(0, 255, 136, 0.1);
+    }
+
     .target-info {
       background: rgba(20, 255, 0, 0.1);
       border: 1px solid var(--terminal-green);
@@ -155,10 +197,17 @@
       padding: 20px;
     }
 
-    .result-damage {
+    .result-change {
       font-size: 2rem;
-      color: var(--error-red);
       margin-bottom: 8px;
+    }
+
+    .result-change.damage {
+      color: var(--error-red);
+    }
+
+    .result-change.heal {
+      color: #00ff88;
     }
 
     .result-hp {
@@ -205,8 +254,8 @@
   <div class="container">
     <div class="terminal">
       <div class="terminal-header">
-        <h1 class="terminal-title">💀 УРОН</h1>
-        <p class="text-dim">Нанесение урона игроку</p>
+        <h1 class="terminal-title" id="page-title">💀 УРОН</h1>
+        <p class="text-dim" id="page-subtitle">Управление HP игрока</p>
       </div>
 
       <!-- Password section -->
@@ -237,19 +286,25 @@
             <p class="target-hp">HP: <span id="target-hp">-</span></p>
           </div>
 
+          <div class="mode-toggle">
+            <button class="mode-btn active-damage" id="mode-damage">💀 УРОН</button>
+            <button class="mode-btn" id="mode-heal">❤️ ЛЕЧЕНИЕ</button>
+          </div>
+
           <div class="form-group">
-            <label>Количество урона</label>
+            <label id="amount-label">Количество урона</label>
             <input type="number" id="damage-amount" value="1" min="1" />
           </div>
 
           <button class="btn btn-damage" id="damage-btn">[ НАНЕСТИ УРОН ]</button>
+          <button class="btn btn-heal hidden" id="heal-btn">[ ВОССТАНОВИТЬ HP ]</button>
           <button class="btn" id="reset-btn" style="margin-top: 12px;">[ ДРУГАЯ ЦЕЛЬ ]</button>
         </div>
 
         <div id="result-section" class="hidden">
           <div class="result">
-            <p class="result-damage" id="result-damage">-</p>
-            <p class="result-hp">Осталось HP: <span id="result-hp">-</span></p>
+            <p class="result-change damage" id="result-change">-</p>
+            <p class="result-hp">HP: <span id="result-hp">-</span></p>
             <p class="dead-label" id="dead-label" style="display: none;">МЁРТВ</p>
           </div>
           <button class="btn" id="continue-btn">[ ПРОДОЛЖИТЬ ]</button>
@@ -281,6 +336,14 @@
     let currentTarget = null;
     let html5QrCode = null;
     let isAuthenticated = false;
+    let currentMode = 'damage'; // 'damage' or 'heal'
+
+    const modeDamageBtn = document.getElementById('mode-damage');
+    const modeHealBtn = document.getElementById('mode-heal');
+    const damageBtn = document.getElementById('damage-btn');
+    const healBtn = document.getElementById('heal-btn');
+    const amountLabel = document.getElementById('amount-label');
+    const resultChange = document.getElementById('result-change');
 
     function showError(msg) {
       errorMessage.textContent = msg;
@@ -296,6 +359,23 @@
       if (section === 'search') searchSection.classList.remove('hidden');
       if (section === 'target') targetSection.classList.remove('hidden');
       if (section === 'result') resultSection.classList.remove('hidden');
+    }
+
+    function setMode(mode) {
+      currentMode = mode;
+      if (mode === 'damage') {
+        modeDamageBtn.classList.add('active-damage');
+        modeHealBtn.classList.remove('active-heal');
+        damageBtn.classList.remove('hidden');
+        healBtn.classList.add('hidden');
+        amountLabel.textContent = 'Количество урона';
+      } else {
+        modeDamageBtn.classList.remove('active-damage');
+        modeHealBtn.classList.add('active-heal');
+        damageBtn.classList.add('hidden');
+        healBtn.classList.remove('hidden');
+        amountLabel.textContent = 'Количество лечения';
+      }
     }
 
     async function checkPassword() {
@@ -389,9 +469,43 @@
 
         const result = await response.json();
 
-        document.getElementById('result-damage').textContent = `-${result.damage} HP`;
+        resultChange.textContent = `-${result.damage} HP`;
+        resultChange.className = 'result-change damage';
         document.getElementById('result-hp').textContent = result.new_hp;
         document.getElementById('dead-label').style.display = result.is_dead ? 'block' : 'none';
+
+        showSection('result');
+      } catch (e) {
+        showError(e.message);
+      }
+    }
+
+    async function healTarget() {
+      if (!currentTarget) return;
+
+      const amount = parseInt(damageAmountInput.value) || 1;
+
+      try {
+        const response = await fetch(`${API_URL}/users/heal`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            target_uuid: currentTarget.player_uuid,
+            amount: amount
+          })
+        });
+
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.detail || 'Ошибка');
+        }
+
+        const result = await response.json();
+
+        resultChange.textContent = `+${result.healed} HP`;
+        resultChange.className = 'result-change heal';
+        document.getElementById('result-hp').textContent = result.new_hp;
+        document.getElementById('dead-label').style.display = 'none';
 
         showSection('result');
       } catch (e) {
@@ -458,8 +572,11 @@
     document.getElementById('search-btn').addEventListener('click', searchTarget);
     document.getElementById('scan-btn').addEventListener('click', startScanner);
     document.getElementById('damage-btn').addEventListener('click', dealDamage);
+    document.getElementById('heal-btn').addEventListener('click', healTarget);
     document.getElementById('reset-btn').addEventListener('click', reset);
     document.getElementById('continue-btn').addEventListener('click', reset);
+    modeDamageBtn.addEventListener('click', () => setMode('damage'));
+    modeHealBtn.addEventListener('click', () => setMode('heal'));
 
     adminPasswordInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') checkPassword();
