@@ -293,7 +293,7 @@
 
           <div class="form-group">
             <label id="amount-label">Количество урона</label>
-            <input type="number" id="damage-amount" value="1" min="1" />
+            <input type="number" id="damage-amount" value="10" min="1" />
           </div>
 
           <button class="btn btn-damage" id="damage-btn">[ НАНЕСТИ УРОН ]</button>
@@ -516,7 +516,7 @@
     function reset() {
       currentTarget = null;
       targetUuidInput.value = '';
-      damageAmountInput.value = '1';
+      damageAmountInput.value = '10';
       showSection('search');
     }
 
