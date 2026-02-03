@@ -220,6 +220,12 @@
       margin-top: 12px;
     }
 
+    .caps-lost {
+      color: var(--terminal-amber);
+      font-size: 1.1rem;
+      margin-top: 8px;
+    }
+
     .text-dim {
       color: var(--terminal-green-dim);
     }
@@ -306,6 +312,7 @@
             <p class="result-change damage" id="result-change">-</p>
             <p class="result-hp">HP: <span id="result-hp">-</span></p>
             <p class="dead-label" id="dead-label" style="display: none;">МЁРТВ</p>
+            <p class="caps-lost" id="caps-lost" style="display: none;"></p>
           </div>
           <button class="btn" id="continue-btn">[ ПРОДОЛЖИТЬ ]</button>
         </div>
@@ -473,6 +480,14 @@
         resultChange.className = 'result-change damage';
         document.getElementById('result-hp').textContent = result.new_hp;
         document.getElementById('dead-label').style.display = result.is_dead ? 'block' : 'none';
+
+        const capsLostEl = document.getElementById('caps-lost');
+        if (result.caps_lost > 0) {
+          capsLostEl.textContent = `Штраф: -${result.caps_lost} 🔴`;
+          capsLostEl.style.display = 'block';
+        } else {
+          capsLostEl.style.display = 'none';
+        }
 
         showSection('result');
       } catch (e) {

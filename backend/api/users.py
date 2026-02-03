@@ -140,6 +140,7 @@ async def deal_damage(request: DamageRequest):
         raise HTTPException(400, "Цель уже мертва")
 
     new_hp = await db_service.deal_damage(request.target_uuid.upper(), request.amount)
+    is_dead = new_hp <= 0
 
     await db_service.log_transaction(
         from_type="system",
@@ -151,12 +152,31 @@ async def deal_damage(request: DamageRequest):
         description=f"Получено урона: {request.amount}"
     )
 
+    # deduct 200 caps on death
+    caps_lost = 0
+    if is_dead:
+        current_balance = target.get("balance", 0)
+        caps_lost = min(200, current_balance)
+        if caps_lost > 0:
+            new_balance = current_balance - caps_lost
+            await db_service.update_balance(request.target_uuid.upper(), new_balance)
+            await db_service.log_transaction(
+                from_type="player",
+                from_id=request.target_uuid.upper(),
+                to_type="system",
+                to_id="DEATH",
+                amount=caps_lost,
+                tx_type="death_penalty",
+                description=f"Штраф за смерть: -{caps_lost} крышек"
+            )
+
     return {
         "success": True,
         "target_uuid": request.target_uuid.upper(),
         "damage": request.amount,
         "new_hp": new_hp,
-        "is_dead": new_hp <= 0
+        "is_dead": is_dead,
+        "caps_lost": caps_lost
     }
 
 
