@@ -167,9 +167,15 @@
                 <div class="tx-row">
                   <span class="tx-desc">{tx.description || ''}</span>
                   {#if tx.amount > 0}
-                    <span class="tx-amount" class:tx-income={tx.to_id === $auth.uuid} class:tx-expense={tx.from_id === $auth.uuid}>
-                      {tx.to_id === $auth.uuid ? '+' : '-'}{tx.amount}
-                    </span>
+                    {#if tx.tx_type === 'heal'}
+                      <span class="tx-amount tx-income">+{tx.amount}</span>
+                    {:else if tx.tx_type === 'damage'}
+                      <span class="tx-amount tx-expense">-{tx.amount}</span>
+                    {:else}
+                      <span class="tx-amount" class:tx-income={tx.to_id === $auth.uuid} class:tx-expense={tx.from_id === $auth.uuid}>
+                        {tx.to_id === $auth.uuid ? '+' : '-'}{tx.amount}
+                      </span>
+                    {/if}
                   {/if}
                 </div>
                 <div class="tx-row tx-details">
