@@ -173,7 +173,7 @@ class ItemAdmin(ModelView, model=Item):
     name_plural = "Товары"
     icon = "fa-solid fa-box"
 
-    column_list = ["id", "qr_code", "image", "item_id", "name", "price", "trader", "effect_type", "effect_duration", "description"]
+    column_list = ["id", "qr_code", "image", "item_id", "name", "price", "hp_restore", "trader", "effect_type", "effect_duration", "description"]
     column_searchable_list = ["name", "item_id", "description"]
     column_sortable_list = ["id", "name", "price"]
     column_default_sort = [("name", False)]
@@ -185,6 +185,7 @@ class ItemAdmin(ModelView, model=Item):
         "item_id": "ID товара",
         "name": "Название",
         "price": "Цена",
+        "hp_restore": "❤️ HP",
         "trader": "Торговец",
         "description": "Описание",
         "image_url": "URL картинки",

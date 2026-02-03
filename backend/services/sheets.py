@@ -1,11 +1,36 @@
 import json
 import uuid
+import time
 from typing import Optional
 
 import gspread
 from google.oauth2.service_account import Credentials
 
 from config.settings import settings
+
+
+class SimpleCache:
+    """Simple in-memory cache with TTL."""
+    def __init__(self, ttl: int = 30):
+        self._cache = {}
+        self._ttl = ttl
+
+    def get(self, key: str):
+        if key in self._cache:
+            value, timestamp = self._cache[key]
+            if time.time() - timestamp < self._ttl:
+                return value
+            del self._cache[key]
+        return None
+
+    def set(self, key: str, value):
+        self._cache[key] = (value, time.time())
+
+    def invalidate(self, key: str = None):
+        if key:
+            self._cache.pop(key, None)
+        else:
+            self._cache.clear()
 
 
 class SheetsService:

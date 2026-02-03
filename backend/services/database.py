@@ -99,6 +99,19 @@ class DatabaseService:
                 return user.hp
             return 0
 
+    async def heal_hp(self, player_uuid: str, amount: int) -> int:
+        """Heal player HP, return new HP."""
+        async with async_session() as session:
+            result = await session.execute(
+                select(User).where(User.player_uuid == player_uuid)
+            )
+            user = result.scalar_one_or_none()
+            if user:
+                user.hp = (user.hp or 0) + amount
+                await session.commit()
+                return user.hp
+            return 0
+
     async def respawn_player(self, player_uuid: str) -> bool:
         """Respawn player: remove all perks and effects, set HP to 5."""
         async with async_session() as session:

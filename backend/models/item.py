@@ -22,6 +22,8 @@ class Item(Base):
     price: Mapped[int] = mapped_column(Integer, nullable=False)
     trader_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("traders.id"), nullable=True)
     image_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # instant effects
+    hp_restore: Mapped[int | None] = mapped_column(Integer, nullable=True)  # instant HP heal
     # temporary effect fields
     effect_type: Mapped[str | None] = mapped_column(String(50), nullable=True)
     effect_value: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -40,6 +42,7 @@ class Item(Base):
             "price": self.price,
             "trader_id": self.trader.trader_id if self.trader else None,
             "image_url": self.image_url or "",
+            "hp_restore": self.hp_restore or 0,
             "effect_type": self.effect_type or "",
             "effect_value": self.effect_value or 0,
             "effect_duration": self.effect_duration or 0,

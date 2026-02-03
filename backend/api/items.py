@@ -67,6 +67,12 @@ async def purchase_item(request: PurchaseRequest):
         description=f"Покупка: {item.get('name', request.item_id)}"
     )
 
+    # apply HP restore if item has one
+    new_hp = None
+    hp_restore = item.get("hp_restore", 0)
+    if hp_restore > 0:
+        new_hp = await db_service.heal_hp(request.player_uuid, hp_restore)
+
     # apply temporary effect if item has one
     effect_applied = False
     if item.get("effect_type") and item.get("effect_duration"):
@@ -77,5 +83,7 @@ async def purchase_item(request: PurchaseRequest):
         "item": item,
         "paid": price,
         "new_balance": new_balance,
+        "new_hp": new_hp,
+        "hp_restored": hp_restore,
         "effect_applied": effect_applied
     }
