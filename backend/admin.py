@@ -391,6 +391,24 @@ class TransactionAdmin(ModelView, model=Transaction):
 from sqladmin import BaseView, expose
 
 
+class PrintQRView(BaseView):
+    name = "Печать QR"
+    icon = "fa-solid fa-qrcode"
+
+    @expose("/print-qr", methods=["GET"])
+    async def print_qr_page(self, request: Request):
+        from models.base import async_session
+        async with async_session() as session:
+            result = await session.execute(select(User).order_by(User.name))
+            users = result.scalars().all()
+
+        return await self.templates.TemplateResponse(
+            request,
+            "print_qr.html",
+            context={"users": users},
+        )
+
+
 class ImportView(BaseView):
     name = "Импорт"
     icon = "fa-solid fa-file-import"
@@ -608,6 +626,7 @@ def setup_admin(app):
     admin.add_view(ActiveEffectAdmin)
     admin.add_view(TransactionAdmin)
     admin.add_view(AttributeAdmin)
+    admin.add_view(PrintQRView)
     admin.add_view(ImportView)
 
     return admin
