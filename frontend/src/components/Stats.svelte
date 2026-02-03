@@ -36,7 +36,7 @@
     <div class="user-info">
       <p class="user-name">{stats.name}</p>
       {#if stats.band}
-        <p class="text-dim">Группировка: {stats.band}</p>
+        <p class="text-dim">{stats.band}</p>
       {/if}
     </div>
 
