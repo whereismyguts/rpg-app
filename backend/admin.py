@@ -512,20 +512,23 @@ class ImportView(BaseView):
 
                         elif import_type == "users":
                             for user_data in data:
-                                player_uuid = user_data.get("player_uuid")
-                                if not player_uuid:
-                                    player_uuid = generate_uuid()
-                                else:
-                                    player_uuid = player_uuid.upper()
-
                                 name = user_data.get("name")
                                 if not name:
                                     continue
+                                name = name.strip()
 
+                                # find existing user by name
                                 result = await session.execute(
-                                    select(User).where(User.player_uuid == player_uuid)
+                                    select(User).where(User.name == name)
                                 )
                                 existing = result.scalar_one_or_none()
+
+                                # use existing uuid or generate new one
+                                player_uuid = user_data.get("player_uuid")
+                                if not player_uuid:
+                                    player_uuid = existing.player_uuid if existing else generate_uuid()
+                                else:
+                                    player_uuid = player_uuid.upper()
 
                                 # build attributes dict
                                 attributes = user_data.get("attributes", {})

@@ -424,24 +424,25 @@ async def import_users(file: UploadFile = File(...)):
     async with async_session() as session:
         for idx, user_data in enumerate(users_data):
             try:
-                player_uuid = user_data.get("player_uuid")
-                if not player_uuid:
-                    # generate uuid if not provided
-                    import uuid as uuid_module
-                    player_uuid = str(uuid_module.uuid4())[:8].upper()
-                else:
-                    player_uuid = player_uuid.upper()
-
                 name = user_data.get("name")
                 if not name:
                     errors.append(f"Row {idx}: missing name")
                     continue
+                name = name.strip()
 
-                # check if exists
+                # find existing user by name
                 result = await session.execute(
-                    select(User).where(User.player_uuid == player_uuid)
+                    select(User).where(User.name == name)
                 )
                 existing = result.scalar_one_or_none()
+
+                # use existing uuid or generate new one
+                player_uuid = user_data.get("player_uuid")
+                if not player_uuid:
+                    import uuid as uuid_module
+                    player_uuid = existing.player_uuid if existing else str(uuid_module.uuid4())[:8].upper()
+                else:
+                    player_uuid = player_uuid.upper()
 
                 # build attributes dict
                 attributes = user_data.get("attributes", {})
