@@ -35,9 +35,6 @@
   {:else if stats}
     <div class="user-info">
       <p class="user-name">{stats.name}</p>
-      {#if stats.profession}
-        <p class="text-dim">Профессия: {stats.profession}</p>
-      {/if}
       {#if stats.band}
         <p class="text-dim">Группировка: {stats.band}</p>
       {/if}

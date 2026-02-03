@@ -88,13 +88,8 @@
 <div class="terminal">
   <div class="terminal-header">
     <h2 class="terminal-title">{$auth.name}</h2>
-    {#if stats?.profession}
-      <div class="profession-row">
-        <p class="profession">{stats.profession}</p>
-        {#if stats?.role_description}
-          <button class="btn-info" on:click={() => showRoleDescription = true} title="Описание роли">?</button>
-        {/if}
-      </div>
+    {#if stats?.role_description}
+      <button class="btn-info" on:click={() => showRoleDescription = true} title="Описание роли">?</button>
     {/if}
     {#if stats?.band}
       <p class="text-dim band-info">Группировка: {stats.band}</p>
@@ -299,19 +294,6 @@
 {/if}
 
 <style>
-  .profession-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    margin-top: 4px;
-  }
-
-  .profession {
-    font-size: 0.85rem;
-    color: var(--terminal-green-dim);
-    margin: 0;
-  }
 
   .btn-info {
     width: 20px;
