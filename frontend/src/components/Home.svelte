@@ -168,6 +168,8 @@
                       <span class="tx-amount tx-income">+{tx.amount}</span>
                     {:else if tx.tx_type === 'damage'}
                       <span class="tx-amount tx-expense">-{tx.amount}</span>
+                    {:else if tx.tx_type === 'death_penalty'}
+                      <span class="tx-amount tx-expense">-{tx.amount}</span>
                     {:else}
                       <span class="tx-amount" class:tx-income={tx.to_id === $auth.uuid} class:tx-expense={tx.from_id === $auth.uuid}>
                         {tx.to_id === $auth.uuid ? '+' : '-'}{tx.amount}
