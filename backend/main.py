@@ -109,6 +109,15 @@ static_path = Path(__file__).parent / "static"
 if static_path.exists():
     app.mount("/assets", StaticFiles(directory=static_path / "assets"), name="assets")
 
+    @app.get("/dmg.html")
+    @app.get("/dmg")
+    async def serve_dmg_page():
+        """Serve damage page (requires admin password in page)."""
+        file_path = static_path / "dmg.html"
+        if file_path.exists():
+            return FileResponse(file_path)
+        raise HTTPException(status_code=404, detail="Page not found")
+
     @app.get("/{path:path}")
     async def serve_frontend(path: str):
         """Serve frontend SPA."""

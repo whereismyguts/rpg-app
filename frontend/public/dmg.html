@@ -150,12 +150,6 @@
       color: var(--error-red);
     }
 
-    .separator {
-      border: none;
-      border-top: 1px solid var(--terminal-green-dim);
-      margin: 20px 0;
-    }
-
     .result {
       text-align: center;
       padding: 20px;
@@ -201,6 +195,10 @@
       width: 100%;
       border: 1px solid var(--terminal-green);
     }
+
+    .hidden {
+      display: none !important;
+    }
   </style>
 </head>
 <body>
@@ -211,42 +209,54 @@
         <p class="text-dim">Нанесение урона игроку</p>
       </div>
 
-      <div id="search-section">
+      <!-- Password section -->
+      <div id="password-section">
         <div class="form-group">
-          <label>UUID игрока</label>
-          <input type="text" id="target-uuid" placeholder="Введите UUID или сканируйте QR" />
+          <label>Пароль администратора</label>
+          <input type="password" id="admin-password" placeholder="Введите пароль" />
         </div>
-        <button class="btn" id="scan-btn" style="margin-bottom: 12px;">[ СКАНИРОВАТЬ QR ]</button>
-        <button class="btn" id="search-btn">[ НАЙТИ ]</button>
-        <div id="scanner-container" style="display: none;"></div>
+        <button class="btn" id="login-btn">[ ВОЙТИ ]</button>
       </div>
 
-      <div id="target-section" style="display: none;">
-        <div class="target-info">
-          <p class="target-name" id="target-name">-</p>
-          <p class="text-dim" id="target-profession">-</p>
-          <p class="target-hp">HP: <span id="target-hp">-</span></p>
+      <!-- Main content (hidden until authenticated) -->
+      <div id="main-content" class="hidden">
+        <div id="search-section">
+          <div class="form-group">
+            <label>UUID игрока</label>
+            <input type="text" id="target-uuid" placeholder="Введите UUID или сканируйте QR" />
+          </div>
+          <button class="btn" id="scan-btn" style="margin-bottom: 12px;">[ СКАНИРОВАТЬ QR ]</button>
+          <button class="btn" id="search-btn">[ НАЙТИ ]</button>
+          <div id="scanner-container" style="display: none;"></div>
         </div>
 
-        <div class="form-group">
-          <label>Количество урона</label>
-          <input type="number" id="damage-amount" value="1" min="1" />
+        <div id="target-section" class="hidden">
+          <div class="target-info">
+            <p class="target-name" id="target-name">-</p>
+            <p class="text-dim" id="target-profession">-</p>
+            <p class="target-hp">HP: <span id="target-hp">-</span></p>
+          </div>
+
+          <div class="form-group">
+            <label>Количество урона</label>
+            <input type="number" id="damage-amount" value="1" min="1" />
+          </div>
+
+          <button class="btn btn-damage" id="damage-btn">[ НАНЕСТИ УРОН ]</button>
+          <button class="btn" id="reset-btn" style="margin-top: 12px;">[ ДРУГАЯ ЦЕЛЬ ]</button>
         </div>
 
-        <button class="btn btn-damage" id="damage-btn">[ НАНЕСТИ УРОН ]</button>
-        <button class="btn" id="reset-btn" style="margin-top: 12px;">[ ДРУГАЯ ЦЕЛЬ ]</button>
+        <div id="result-section" class="hidden">
+          <div class="result">
+            <p class="result-damage" id="result-damage">-</p>
+            <p class="result-hp">Осталось HP: <span id="result-hp">-</span></p>
+            <p class="dead-label" id="dead-label" style="display: none;">МЁРТВ</p>
+          </div>
+          <button class="btn" id="continue-btn">[ ПРОДОЛЖИТЬ ]</button>
+        </div>
       </div>
 
-      <div id="result-section" style="display: none;">
-        <div class="result">
-          <p class="result-damage" id="result-damage">-</p>
-          <p class="result-hp">Осталось HP: <span id="result-hp">-</span></p>
-          <p class="dead-label" id="dead-label" style="display: none;">МЁРТВ</p>
-        </div>
-        <button class="btn" id="continue-btn">[ ПРОДОЛЖИТЬ ]</button>
-      </div>
-
-      <div id="error-message" class="message message-error" style="display: none;"></div>
+      <div id="error-message" class="message message-error hidden"></div>
     </div>
 
     <a href="/" class="back-link">← Вернуться</a>
@@ -255,32 +265,74 @@
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script>
     const API_URL = '/api';
+    const ADMIN_PASSWORD_KEY = 'rpg_admin_auth';
 
+    const passwordSection = document.getElementById('password-section');
+    const mainContent = document.getElementById('main-content');
     const searchSection = document.getElementById('search-section');
     const targetSection = document.getElementById('target-section');
     const resultSection = document.getElementById('result-section');
     const errorMessage = document.getElementById('error-message');
 
+    const adminPasswordInput = document.getElementById('admin-password');
     const targetUuidInput = document.getElementById('target-uuid');
     const damageAmountInput = document.getElementById('damage-amount');
 
     let currentTarget = null;
     let html5QrCode = null;
+    let isAuthenticated = false;
 
     function showError(msg) {
       errorMessage.textContent = msg;
-      errorMessage.style.display = 'block';
-      setTimeout(() => errorMessage.style.display = 'none', 5000);
+      errorMessage.classList.remove('hidden');
+      setTimeout(() => errorMessage.classList.add('hidden'), 5000);
     }
 
     function showSection(section) {
-      searchSection.style.display = 'none';
-      targetSection.style.display = 'none';
-      resultSection.style.display = 'none';
+      searchSection.classList.add('hidden');
+      targetSection.classList.add('hidden');
+      resultSection.classList.add('hidden');
 
-      if (section === 'search') searchSection.style.display = 'block';
-      if (section === 'target') targetSection.style.display = 'block';
-      if (section === 'result') resultSection.style.display = 'block';
+      if (section === 'search') searchSection.classList.remove('hidden');
+      if (section === 'target') targetSection.classList.remove('hidden');
+      if (section === 'result') resultSection.classList.remove('hidden');
+    }
+
+    async function checkPassword() {
+      const password = adminPasswordInput.value;
+      if (!password) {
+        showError('Введите пароль');
+        return;
+      }
+
+      try {
+        // verify password
+        const response = await fetch(`${API_URL}/admin/verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: password })
+        });
+
+        if (!response.ok) {
+          throw new Error('Неверный пароль');
+        }
+
+        isAuthenticated = true;
+        sessionStorage.setItem(ADMIN_PASSWORD_KEY, 'true');
+        passwordSection.classList.add('hidden');
+        mainContent.classList.remove('hidden');
+        showSection('search');
+      } catch (e) {
+        showError(e.message);
+      }
+    }
+
+    // check if already authenticated
+    if (sessionStorage.getItem(ADMIN_PASSWORD_KEY) === 'true') {
+      isAuthenticated = true;
+      passwordSection.classList.add('hidden');
+      mainContent.classList.remove('hidden');
+      showSection('search');
     }
 
     async function searchTarget() {
@@ -299,7 +351,7 @@
 
         const user = await response.json();
 
-        // get HP from /me endpoint
+        // get HP
         const meResponse = await fetch(`${API_URL}/users/me?player_uuid=${uuid}`);
         const meData = await meResponse.json();
 
@@ -402,11 +454,16 @@
       document.getElementById('scan-btn').style.display = 'block';
     }
 
+    document.getElementById('login-btn').addEventListener('click', checkPassword);
     document.getElementById('search-btn').addEventListener('click', searchTarget);
     document.getElementById('scan-btn').addEventListener('click', startScanner);
     document.getElementById('damage-btn').addEventListener('click', dealDamage);
     document.getElementById('reset-btn').addEventListener('click', reset);
     document.getElementById('continue-btn').addEventListener('click', reset);
+
+    adminPasswordInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') checkPassword();
+    });
 
     targetUuidInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') searchTarget();
