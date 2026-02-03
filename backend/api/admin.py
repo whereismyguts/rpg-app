@@ -401,6 +401,96 @@ async def import_items(file: UploadFile = File(...)):
     }
 
 
+@router.post("/import/users")
+async def import_users(file: UploadFile = File(...)):
+    """Bulk import users from JSON file."""
+    if not file.filename.endswith(".json"):
+        raise HTTPException(status_code=400, detail="File must be JSON")
+
+    import json
+    content = await file.read()
+    try:
+        users_data = json.loads(content)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON")
+
+    if not isinstance(users_data, list):
+        raise HTTPException(status_code=400, detail="JSON must be array of users")
+
+    created = 0
+    updated = 0
+    errors = []
+
+    async with async_session() as session:
+        for idx, user_data in enumerate(users_data):
+            try:
+                player_uuid = user_data.get("player_uuid")
+                if not player_uuid:
+                    # generate uuid if not provided
+                    import uuid as uuid_module
+                    player_uuid = str(uuid_module.uuid4())[:8].upper()
+                else:
+                    player_uuid = player_uuid.upper()
+
+                name = user_data.get("name")
+                if not name:
+                    errors.append(f"Row {idx}: missing name")
+                    continue
+
+                # check if exists
+                result = await session.execute(
+                    select(User).where(User.player_uuid == player_uuid)
+                )
+                existing = result.scalar_one_or_none()
+
+                # build attributes dict
+                attributes = user_data.get("attributes", {})
+                if not attributes:
+                    # try to build from individual fields
+                    attr_fields = ["strength", "perception", "endurance", "charisma", "intelligence", "agility", "luck"]
+                    for field in attr_fields:
+                        if field in user_data:
+                            attributes[field] = int(user_data[field])
+
+                if existing:
+                    existing.name = user_data.get("name", existing.name)
+                    existing.profession = user_data.get("profession", existing.profession)
+                    existing.role_description = user_data.get("role_description", existing.role_description)
+                    existing.balance = user_data.get("balance", existing.balance)
+                    existing.hp = user_data.get("hp", existing.hp)
+                    existing.band = user_data.get("band", existing.band)
+                    if attributes:
+                        existing.attributes = attributes
+                    updated += 1
+                else:
+                    user = User(
+                        player_uuid=player_uuid,
+                        name=name,
+                        profession=user_data.get("profession"),
+                        role_description=user_data.get("role_description"),
+                        balance=user_data.get("balance", 100),
+                        hp=user_data.get("hp", 100),
+                        band=user_data.get("band"),
+                        attributes=attributes if attributes else {
+                            "strength": 5, "perception": 5, "endurance": 5,
+                            "charisma": 5, "intelligence": 5, "agility": 5, "luck": 5
+                        },
+                    )
+                    session.add(user)
+                    created += 1
+            except Exception as e:
+                errors.append(f"Row {idx}: {str(e)}")
+
+        await session.commit()
+
+    return {
+        "success": True,
+        "created": created,
+        "updated": updated,
+        "errors": errors
+    }
+
+
 @router.post("/import/perks")
 async def import_perks(file: UploadFile = File(...)):
     """Bulk import perks from JSON file."""

@@ -510,6 +510,58 @@ class ImportView(BaseView):
                                     session.add(perk)
                                     created += 1
 
+                        elif import_type == "users":
+                            for user_data in data:
+                                player_uuid = user_data.get("player_uuid")
+                                if not player_uuid:
+                                    player_uuid = generate_uuid()
+                                else:
+                                    player_uuid = player_uuid.upper()
+
+                                name = user_data.get("name")
+                                if not name:
+                                    continue
+
+                                result = await session.execute(
+                                    select(User).where(User.player_uuid == player_uuid)
+                                )
+                                existing = result.scalar_one_or_none()
+
+                                # build attributes dict
+                                attributes = user_data.get("attributes", {})
+                                if not attributes:
+                                    attr_fields = ["strength", "perception", "endurance", "charisma", "intelligence", "agility", "luck"]
+                                    for field in attr_fields:
+                                        if field in user_data:
+                                            attributes[field] = int(user_data[field])
+
+                                if existing:
+                                    existing.name = user_data.get("name", existing.name)
+                                    existing.profession = user_data.get("profession", existing.profession)
+                                    existing.role_description = user_data.get("role_description", existing.role_description)
+                                    existing.balance = user_data.get("balance", existing.balance)
+                                    existing.hp = user_data.get("hp", existing.hp)
+                                    existing.band = user_data.get("band", existing.band)
+                                    if attributes:
+                                        existing.attributes = attributes
+                                    updated += 1
+                                else:
+                                    user = User(
+                                        player_uuid=player_uuid,
+                                        name=name,
+                                        profession=user_data.get("profession"),
+                                        role_description=user_data.get("role_description"),
+                                        balance=user_data.get("balance", 100),
+                                        hp=user_data.get("hp", 100),
+                                        band=user_data.get("band"),
+                                        attributes=attributes if attributes else {
+                                            "strength": 5, "perception": 5, "endurance": 5,
+                                            "charisma": 5, "intelligence": 5, "agility": 5, "luck": 5
+                                        },
+                                    )
+                                    session.add(user)
+                                    created += 1
+
                         await session.commit()
 
                     message = f"Импорт завершён: создано {created}, обновлено {updated}"

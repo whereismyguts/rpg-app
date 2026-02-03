@@ -18,6 +18,7 @@
                     <div class="mb-3">
                         <label class="form-label">Тип импорта</label>
                         <select name="import_type" class="form-select" required>
+                            <option value="users">Игроки (users.json)</option>
                             <option value="items">Товары (items.json)</option>
                             <option value="perks">Перки (perks.json)</option>
                         </select>
@@ -49,27 +50,51 @@
                 <div class="tab-content">
                     <div class="tab-pane fade show active" id="csv-tab">
                         <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
+                                <h6>users.csv</h6>
+                                <pre class="bg-light p-3 rounded" style="font-size:11px;"><code>name,hp,balance,band,strength,perception,endurance,charisma,intelligence,agility,luck
+Легионер,100,2000,Легион,7,5,6,3,4,5,5</code></pre>
+                            </div>
+                            <div class="col-md-4">
                                 <h6>items.csv</h6>
-                                <pre class="bg-light p-3 rounded"><code>item_id,name,description,price,trader_id,effect_type,effect_value,effect_duration
+                                <pre class="bg-light p-3 rounded" style="font-size:11px;"><code>item_id,name,description,price,trader_id,effect_type,effect_value,effect_duration
 STIMPAK,Стимпак,Восстанавливает здоровье,25,TRADER1,attr_endurance,2,30</code></pre>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <h6>perks.csv</h6>
-                                <pre class="bg-light p-3 rounded"><code>perk_id,name,description,one_time,effect_type,effect_value
+                                <pre class="bg-light p-3 rounded" style="font-size:11px;"><code>perk_id,name,description,one_time,effect_type,effect_value
 STRONG_BACK,Крепкая спина,+2 к силе,true,attr_strength,2</code></pre>
                             </div>
                         </div>
                     </div>
                     <div class="tab-pane fade" id="json-tab">
                         <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
+                                <h6>users.json</h6>
+                                <pre class="bg-light p-3 rounded" style="font-size:11px;"><code>[
+  {
+    "name": "Легионер",
+    "hp": 100,
+    "balance": 2000,
+    "band": "Легион",
+    "strength": 7,
+    "perception": 5,
+    "endurance": 6,
+    "charisma": 3,
+    "intelligence": 4,
+    "agility": 5,
+    "luck": 5,
+    "role_description": ""
+  }
+]</code></pre>
+                            </div>
+                            <div class="col-md-4">
                                 <h6>items.json</h6>
-                                <pre class="bg-light p-3 rounded"><code>[
+                                <pre class="bg-light p-3 rounded" style="font-size:11px;"><code>[
   {
     "item_id": "STIMPAK",
     "name": "Стимпак",
-    "description": "Восстанавливает здоровье",
+    "description": "Восстановка",
     "price": 25,
     "trader_id": "TRADER1",
     "effect_type": "attr_endurance",
@@ -78,9 +103,9 @@ STRONG_BACK,Крепкая спина,+2 к силе,true,attr_strength,2</code>
   }
 ]</code></pre>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <h6>perks.json</h6>
-                                <pre class="bg-light p-3 rounded"><code>[
+                                <pre class="bg-light p-3 rounded" style="font-size:11px;"><code>[
   {
     "perk_id": "STRONG_BACK",
     "name": "Крепкая спина",
