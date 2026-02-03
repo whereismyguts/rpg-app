@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урон - Vault-Tec</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --terminal-green: #14ff00;
+      --terminal-green-dim: #0a7f00;
+      --terminal-amber: #ffb000;
+      --terminal-dark: #0a0a0a;
+      --terminal-bg: #0d1a0d;
+      --error-red: #ff4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Share Tech Mono', monospace;
+    }
+
+    body {
+      background: var(--terminal-dark);
+      color: var(--terminal-green);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .terminal {
+      background: var(--terminal-bg);
+      border: 2px solid var(--terminal-green);
+      padding: 20px;
+    }
+
+    .terminal-header {
+      text-align: center;
+      padding-bottom: 15px;
+      margin-bottom: 15px;
+      border-bottom: 1px solid var(--terminal-green);
+    }
+
+    .terminal-title {
+      font-size: 1.5rem;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      font-size: 0.85rem;
+      letter-spacing: 1px;
+    }
+
+    input {
+      background: rgba(20, 255, 0, 0.05);
+      border: 1px solid var(--terminal-green);
+      color: var(--terminal-green);
+      padding: 12px 16px;
+      font-family: inherit;
+      font-size: 1rem;
+      width: 100%;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: var(--terminal-green);
+      box-shadow: 0 0 10px rgba(20, 255, 0, 0.3);
+    }
+
+    .btn {
+      background: transparent;
+      border: 2px solid var(--terminal-green);
+      color: var(--terminal-green);
+      padding: 12px 24px;
+      font-family: inherit;
+      font-size: 1rem;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      width: 100%;
+      transition: all 0.2s ease;
+    }
+
+    .btn:hover:not(:disabled) {
+      background: var(--terminal-green);
+      color: var(--terminal-dark);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-damage {
+      border-color: var(--error-red);
+      color: var(--error-red);
+    }
+
+    .btn-damage:hover:not(:disabled) {
+      background: var(--error-red);
+      color: var(--terminal-dark);
+    }
+
+    .target-info {
+      background: rgba(20, 255, 0, 0.1);
+      border: 1px solid var(--terminal-green);
+      padding: 16px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .target-name {
+      font-size: 1.3rem;
+      margin-bottom: 8px;
+    }
+
+    .target-hp {
+      font-size: 1rem;
+      color: var(--terminal-amber);
+    }
+
+    .message {
+      padding: 12px;
+      margin: 16px 0;
+      border: 1px solid;
+    }
+
+    .message-success {
+      border-color: var(--terminal-green);
+      background: rgba(20, 255, 0, 0.1);
+    }
+
+    .message-error {
+      border-color: var(--error-red);
+      background: rgba(255, 68, 68, 0.1);
+      color: var(--error-red);
+    }
+
+    .separator {
+      border: none;
+      border-top: 1px solid var(--terminal-green-dim);
+      margin: 20px 0;
+    }
+
+    .result {
+      text-align: center;
+      padding: 20px;
+    }
+
+    .result-damage {
+      font-size: 2rem;
+      color: var(--error-red);
+      margin-bottom: 8px;
+    }
+
+    .result-hp {
+      font-size: 1.2rem;
+    }
+
+    .dead-label {
+      color: var(--error-red);
+      font-size: 1.5rem;
+      margin-top: 12px;
+    }
+
+    .text-dim {
+      color: var(--terminal-green-dim);
+    }
+
+    .back-link {
+      display: block;
+      text-align: center;
+      margin-top: 20px;
+      color: var(--terminal-green-dim);
+      text-decoration: none;
+    }
+
+    .back-link:hover {
+      color: var(--terminal-green);
+    }
+
+    #scanner-container {
+      margin-bottom: 16px;
+    }
+
+    #scanner-container video {
+      width: 100%;
+      border: 1px solid var(--terminal-green);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="terminal">
+      <div class="terminal-header">
+        <h1 class="terminal-title">💀 УРОН</h1>
+        <p class="text-dim">Нанесение урона игроку</p>
+      </div>
+
+      <div id="search-section">
+        <div class="form-group">
+          <label>UUID игрока</label>
+          <input type="text" id="target-uuid" placeholder="Введите UUID или сканируйте QR" />
+        </div>
+        <button class="btn" id="scan-btn" style="margin-bottom: 12px;">[ СКАНИРОВАТЬ QR ]</button>
+        <button class="btn" id="search-btn">[ НАЙТИ ]</button>
+        <div id="scanner-container" style="display: none;"></div>
+      </div>
+
+      <div id="target-section" style="display: none;">
+        <div class="target-info">
+          <p class="target-name" id="target-name">-</p>
+          <p class="text-dim" id="target-profession">-</p>
+          <p class="target-hp">HP: <span id="target-hp">-</span></p>
+        </div>
+
+        <div class="form-group">
+          <label>Количество урона</label>
+          <input type="number" id="damage-amount" value="1" min="1" />
+        </div>
+
+        <button class="btn btn-damage" id="damage-btn">[ НАНЕСТИ УРОН ]</button>
+        <button class="btn" id="reset-btn" style="margin-top: 12px;">[ ДРУГАЯ ЦЕЛЬ ]</button>
+      </div>
+
+      <div id="result-section" style="display: none;">
+        <div class="result">
+          <p class="result-damage" id="result-damage">-</p>
+          <p class="result-hp">Осталось HP: <span id="result-hp">-</span></p>
+          <p class="dead-label" id="dead-label" style="display: none;">МЁРТВ</p>
+        </div>
+        <button class="btn" id="continue-btn">[ ПРОДОЛЖИТЬ ]</button>
+      </div>
+
+      <div id="error-message" class="message message-error" style="display: none;"></div>
+    </div>
+
+    <a href="/" class="back-link">← Вернуться</a>
+  </div>
+
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script>
+    const API_URL = '/api';
+
+    const searchSection = document.getElementById('search-section');
+    const targetSection = document.getElementById('target-section');
+    const resultSection = document.getElementById('result-section');
+    const errorMessage = document.getElementById('error-message');
+
+    const targetUuidInput = document.getElementById('target-uuid');
+    const damageAmountInput = document.getElementById('damage-amount');
+
+    let currentTarget = null;
+    let html5QrCode = null;
+
+    function showError(msg) {
+      errorMessage.textContent = msg;
+      errorMessage.style.display = 'block';
+      setTimeout(() => errorMessage.style.display = 'none', 5000);
+    }
+
+    function showSection(section) {
+      searchSection.style.display = 'none';
+      targetSection.style.display = 'none';
+      resultSection.style.display = 'none';
+
+      if (section === 'search') searchSection.style.display = 'block';
+      if (section === 'target') targetSection.style.display = 'block';
+      if (section === 'result') resultSection.style.display = 'block';
+    }
+
+    async function searchTarget() {
+      const uuid = targetUuidInput.value.trim().toUpperCase();
+      if (!uuid) {
+        showError('Введите UUID игрока');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_URL}/users/lookup?player_uuid=${uuid}`);
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.detail || 'Игрок не найден');
+        }
+
+        const user = await response.json();
+
+        // get HP from /me endpoint
+        const meResponse = await fetch(`${API_URL}/users/me?player_uuid=${uuid}`);
+        const meData = await meResponse.json();
+
+        currentTarget = { ...user, hp: meData.hp };
+
+        document.getElementById('target-name').textContent = user.name;
+        document.getElementById('target-profession').textContent = user.profession || '-';
+        document.getElementById('target-hp').textContent = meData.hp;
+
+        showSection('target');
+      } catch (e) {
+        showError(e.message);
+      }
+    }
+
+    async function dealDamage() {
+      if (!currentTarget) return;
+
+      const amount = parseInt(damageAmountInput.value) || 1;
+
+      try {
+        const response = await fetch(`${API_URL}/users/damage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            target_uuid: currentTarget.player_uuid,
+            amount: amount
+          })
+        });
+
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.detail || 'Ошибка');
+        }
+
+        const result = await response.json();
+
+        document.getElementById('result-damage').textContent = `-${result.damage} HP`;
+        document.getElementById('result-hp').textContent = result.new_hp;
+        document.getElementById('dead-label').style.display = result.is_dead ? 'block' : 'none';
+
+        showSection('result');
+      } catch (e) {
+        showError(e.message);
+      }
+    }
+
+    function reset() {
+      currentTarget = null;
+      targetUuidInput.value = '';
+      damageAmountInput.value = '1';
+      showSection('search');
+    }
+
+    function startScanner() {
+      const scannerContainer = document.getElementById('scanner-container');
+      scannerContainer.style.display = 'block';
+      document.getElementById('scan-btn').style.display = 'none';
+
+      html5QrCode = new Html5Qrcode('scanner-container');
+      html5QrCode.start(
+        { facingMode: 'environment' },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        async (decodedText) => {
+          stopScanner();
+
+          try {
+            const response = await fetch(`${API_URL}/qr/parse`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ data: decodedText })
+            });
+
+            if (!response.ok) throw new Error('Неверный QR код');
+
+            const parsed = await response.json();
+            if (parsed.type === 'login' && parsed.data.player_uuid) {
+              targetUuidInput.value = parsed.data.player_uuid;
+              searchTarget();
+            } else {
+              showError('QR код не содержит UUID игрока');
+            }
+          } catch (e) {
+            showError(e.message);
+          }
+        },
+        () => {}
+      ).catch(err => {
+        showError('Ошибка камеры: ' + err);
+        stopScanner();
+      });
+    }
+
+    function stopScanner() {
+      if (html5QrCode) {
+        html5QrCode.stop().catch(() => {});
+        html5QrCode = null;
+      }
+      document.getElementById('scanner-container').style.display = 'none';
+      document.getElementById('scan-btn').style.display = 'block';
+    }
+
+    document.getElementById('search-btn').addEventListener('click', searchTarget);
+    document.getElementById('scan-btn').addEventListener('click', startScanner);
+    document.getElementById('damage-btn').addEventListener('click', dealDamage);
+    document.getElementById('reset-btn').addEventListener('click', reset);
+    document.getElementById('continue-btn').addEventListener('click', reset);
+
+    targetUuidInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') searchTarget();
+    });
+  </script>
+</body>
+</html>

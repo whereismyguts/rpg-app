@@ -23,6 +23,7 @@ class User(Base):
     profession: Mapped[str | None] = mapped_column(String(100), nullable=True)
     role_description: Mapped[str | None] = mapped_column(String(2000), nullable=True)
     balance: Mapped[int] = mapped_column(Integer, default=100)
+    hp: Mapped[int] = mapped_column(Integer, default=100)
     band: Mapped[str | None] = mapped_column(String(100), nullable=True)
     attributes: Mapped[dict] = mapped_column(JSONB, default=dict)
     created_at = mapped_column(DateTime, default=now_local)
@@ -41,6 +42,7 @@ class User(Base):
             "profession": self.profession or "",
             "role_description": self.role_description or "",
             "balance": self.balance,
+            "hp": self.hp,
             "band": self.band or "",
             "attributes": self.attributes or {},
         }

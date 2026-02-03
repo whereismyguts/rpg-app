@@ -12,8 +12,18 @@ class UserResponse(BaseModel):
     player_uuid: str
     name: str
     balance: int
+    hp: int = 100
     profession: str
     band: str
+
+
+class DamageRequest(BaseModel):
+    target_uuid: str
+    amount: int = 1
+
+
+class RespawnRequest(BaseModel):
+    player_uuid: str
 
 
 class AttributeItem(BaseModel):
@@ -57,6 +67,7 @@ async def get_current_user(player_uuid: str = Query(...)):
         player_uuid=user["player_uuid"],
         name=user["name"],
         balance=user["balance"],
+        hp=user.get("hp", 100),
         profession=user.get("profession", ""),
         band=user.get("band", ""),
     )
@@ -111,3 +122,62 @@ async def get_user_transactions(player_uuid: str = Query(...), limit: int = Quer
 
     transactions = await db_service.get_user_transactions(player_uuid.upper(), limit)
     return {"transactions": transactions}
+
+
+@router.post("/damage")
+async def deal_damage(request: DamageRequest):
+    """Deal damage to a player."""
+    target = await db_service.get_user_by_uuid(request.target_uuid.upper())
+    if not target:
+        raise HTTPException(404, "Target not found")
+
+    if target.get("hp", 100) <= 0:
+        raise HTTPException(400, "Цель уже мертва")
+
+    new_hp = await db_service.deal_damage(request.target_uuid.upper(), request.amount)
+
+    await db_service.log_transaction(
+        from_type="system",
+        from_id="DAMAGE",
+        to_type="player",
+        to_id=request.target_uuid.upper(),
+        amount=request.amount,
+        tx_type="damage",
+        description=f"Получено урона: {request.amount}"
+    )
+
+    return {
+        "success": True,
+        "target_uuid": request.target_uuid.upper(),
+        "damage": request.amount,
+        "new_hp": new_hp,
+        "is_dead": new_hp <= 0
+    }
+
+
+@router.post("/respawn")
+async def respawn_player(request: RespawnRequest):
+    """Respawn a dead player - lose all perks/effects, restore with 5 HP."""
+    user = await db_service.get_user_by_uuid(request.player_uuid.upper())
+    if not user:
+        raise HTTPException(404, "User not found")
+
+    if user.get("hp", 100) > 0:
+        raise HTTPException(400, "Игрок ещё жив")
+
+    await db_service.respawn_player(request.player_uuid.upper())
+
+    await db_service.log_transaction(
+        from_type="system",
+        from_id="RESPAWN",
+        to_type="player",
+        to_id=request.player_uuid.upper(),
+        amount=0,
+        tx_type="respawn",
+        description="Возрождение"
+    )
+
+    return {
+        "success": True,
+        "new_hp": 5
+    }

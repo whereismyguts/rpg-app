@@ -51,6 +51,7 @@
     try {
       const user = await api.getMe();
       auth.updateBalance(user.balance);
+      auth.updateHp(user.hp);
 
       const [perksResult, statsResult, qrResult, txResult] = await Promise.all([
         api.getMyPerks(),
@@ -105,8 +106,15 @@
       <p>ЗАГРУЗКА<span class="loading-cursor">_</span></p>
     </div>
   {:else}
-    <div class="balance-display">
-      <p class="balance-value">{$auth.balance} <span class="text-amber">КРЫШЕК</span></p>
+    <div class="stats-display">
+      <div class="stat-item">
+        <span class="stat-value hp-value">❤️ {$auth.hp}</span>
+        <span class="stat-label">HP</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-value caps-value">{$auth.balance}</span>
+        <span class="stat-label">КРЫШЕК</span>
+      </div>
     </div>
 
     <hr class="separator" />
@@ -326,9 +334,35 @@
     margin-top: 8px;
   }
 
-  .balance-value {
-    font-size: 1.5rem;
+  .stats-display {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    padding: 16px;
+  }
+
+  .stat-item {
     text-align: center;
+  }
+
+  .stat-value {
+    font-size: 1.5rem;
+    display: block;
+  }
+
+  .stat-label {
+    font-size: 0.75rem;
+    color: var(--terminal-green-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .hp-value {
+    color: var(--error-red);
+  }
+
+  .caps-value {
+    color: var(--terminal-amber);
   }
 
   .button-row {

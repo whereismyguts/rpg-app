@@ -86,6 +86,45 @@ class DatabaseService:
                 return True
             return False
 
+    async def deal_damage(self, player_uuid: str, amount: int) -> int:
+        """Deal damage to player, return new HP."""
+        async with async_session() as session:
+            result = await session.execute(
+                select(User).where(User.player_uuid == player_uuid)
+            )
+            user = result.scalar_one_or_none()
+            if user:
+                user.hp = max(0, (user.hp or 100) - amount)
+                await session.commit()
+                return user.hp
+            return 0
+
+    async def respawn_player(self, player_uuid: str) -> bool:
+        """Respawn player: remove all perks and effects, set HP to 5."""
+        async with async_session() as session:
+            result = await session.execute(
+                select(User).where(User.player_uuid == player_uuid)
+            )
+            user = result.scalar_one_or_none()
+            if not user:
+                return False
+
+            # remove all perks
+            await session.execute(
+                UserPerk.__table__.delete().where(UserPerk.user_id == user.id)
+            )
+
+            # remove all active effects
+            await session.execute(
+                ActiveEffect.__table__.delete().where(ActiveEffect.user_id == user.id)
+            )
+
+            # restore HP to 5
+            user.hp = 5
+
+            await session.commit()
+            return True
+
     async def link_telegram_to_player(self, telegram_id: int, player_uuid: str) -> bool:
         async with async_session() as session:
             # clear existing link

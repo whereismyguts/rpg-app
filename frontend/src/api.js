@@ -114,6 +114,25 @@ class ApiClient {
   async getMyTransactions(limit = 50) {
     return this.request(`/users/transactions?player_uuid=${this.playerUuid}&limit=${limit}`);
   }
+
+  async dealDamage(targetUuid, amount = 1) {
+    return this.request('/users/damage', {
+      method: 'POST',
+      body: JSON.stringify({
+        target_uuid: targetUuid,
+        amount: amount,
+      }),
+    });
+  }
+
+  async respawn() {
+    return this.request('/users/respawn', {
+      method: 'POST',
+      body: JSON.stringify({
+        player_uuid: this.playerUuid,
+      }),
+    });
+  }
 }
 
 export const api = new ApiClient();

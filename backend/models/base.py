@@ -64,6 +64,7 @@ async def init_db():
             "ALTER TABLE items ADD COLUMN IF NOT EXISTS effect_value INTEGER",
             "ALTER TABLE items ADD COLUMN IF NOT EXISTS effect_duration INTEGER",
             "ALTER TABLE users ADD COLUMN IF NOT EXISTS role_description VARCHAR(2000)",
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS hp INTEGER DEFAULT 100",
         ]
         for sql in migrations:
             await conn.execute(text(sql))

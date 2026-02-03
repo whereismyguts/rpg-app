@@ -9,6 +9,7 @@
   import QRScanner from './components/QRScanner.svelte';
   import PayItem from './components/PayItem.svelte';
   import ApplyPerk from './components/ApplyPerk.svelte';
+  import DeathScreen from './components/DeathScreen.svelte';
 
   let currentPage = 'home';
   let loading = true;
@@ -42,7 +43,12 @@
       try {
         api.setPlayerUuid(savedUuid);
         const user = await api.getMe();
-        auth.login(user);
+        auth.login({
+          player_uuid: user.player_uuid,
+          name: user.name,
+          balance: user.balance,
+          hp: user.hp,
+        });
       } catch (e) {
         auth.logout();
       }
@@ -125,6 +131,8 @@
   </div>
 {:else if !$auth.isAuthenticated}
   <Login on:login={handleLogin} />
+{:else if $auth.hp <= 0}
+  <DeathScreen on:respawn={() => navigate('home')} />
 {:else}
   <div class="page">
     {#if currentPage === 'home'}

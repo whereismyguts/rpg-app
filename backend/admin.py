@@ -103,9 +103,9 @@ class UserAdmin(ModelView, model=User):
     name_plural = "Игроки"
     icon = "fa-solid fa-user"
 
-    column_list = ["id", "qr_code", "player_uuid", "name", "balance", "profession", "band", "telegram_id"]
+    column_list = ["id", "qr_code", "player_uuid", "name", "hp", "balance", "profession", "band", "telegram_id"]
     column_searchable_list = ["name", "player_uuid", "profession", "band"]
-    column_sortable_list = ["id", "name", "balance", "created_at"]
+    column_sortable_list = ["id", "name", "hp", "balance", "created_at"]
     column_default_sort = [("id", True)]
 
     column_labels = {
@@ -113,6 +113,7 @@ class UserAdmin(ModelView, model=User):
         "qr_code": "QR",
         "player_uuid": "UUID",
         "name": "Имя",
+        "hp": "HP",
         "balance": "Баланс",
         "profession": "Профессия",
         "band": "Группировка",
@@ -121,11 +122,12 @@ class UserAdmin(ModelView, model=User):
         "created_at": "Создан",
     }
 
-    form_excluded_columns = ["user_perks", "created_at"]
+    form_excluded_columns = ["user_perks", "active_effects", "created_at"]
 
     form_args = {
         "player_uuid": {"default": generate_uuid},
         "balance": {"default": 100},
+        "hp": {"default": 100},
     }
 
     form_widget_args = {
