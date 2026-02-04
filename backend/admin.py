@@ -392,7 +392,7 @@ from sqladmin import BaseView, expose
 
 
 class PrintQRView(BaseView):
-    name = "Печать QR"
+    name = "Печать игроков"
     icon = "fa-solid fa-qrcode"
 
     @expose("/print-qr", methods=["GET"])
