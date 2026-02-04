@@ -5,10 +5,10 @@
     <div class="col-12">
         <div class="card d-print-none mb-3">
             <div class="card-header">
-                <h3 class="card-title">Печать QR-кодов игроков</h3>
+                <h3 class="card-title">Печать QR-кодов перков</h3>
             </div>
             <div class="card-body">
-                <p>Всего игроков: <strong>{{ users|length }}</strong></p>
+                <p>Всего перков: <strong>{{ perks|length }}</strong></p>
                 <button class="btn btn-primary" onclick="window.print()">
                     <i class="fa-solid fa-print"></i> Печать
                 </button>
@@ -16,11 +16,11 @@
         </div>
 
         <div class="qr-grid">
-            {% for user in users %}
+            {% for perk in perks %}
             <div class="qr-card">
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=LOGIN:{{ user.player_uuid }}"
-                     alt="QR {{ user.player_uuid }}" class="qr-img">
-                <div class="qr-name">{{ user.name }}</div>
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=PERK:{{ perk.perk_id }}"
+                     alt="QR {{ perk.perk_id }}" class="qr-img">
+                <div class="qr-name">{{ perk.name }}</div>
             </div>
             {% endfor %}
         </div>
@@ -58,12 +58,6 @@
         word-wrap: break-word;
     }
 
-    .qr-uuid {
-        font-family: monospace;
-        font-size: 12px;
-        color: #666;
-    }
-
     @media print {
         .d-print-none {
             display: none !important;
@@ -92,10 +86,6 @@
 
         .qr-name {
             font-size: 12px;
-        }
-
-        .qr-uuid {
-            font-size: 10px;
         }
     }
 </style>

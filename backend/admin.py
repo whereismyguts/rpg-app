@@ -409,6 +409,42 @@ class PrintQRView(BaseView):
         )
 
 
+class PrintItemsView(BaseView):
+    name = "Печать товаров"
+    icon = "fa-solid fa-box"
+
+    @expose("/print-items", methods=["GET"])
+    async def print_items(self, request: Request):
+        from models.base import async_session
+        async with async_session() as session:
+            result = await session.execute(select(Item).order_by(Item.name))
+            items = result.scalars().all()
+
+        return await self.templates.TemplateResponse(
+            request,
+            "print_items.html",
+            context={"items": items},
+        )
+
+
+class PrintPerksView(BaseView):
+    name = "Печать перков"
+    icon = "fa-solid fa-star"
+
+    @expose("/print-perks", methods=["GET"])
+    async def print_perks(self, request: Request):
+        from models.base import async_session
+        async with async_session() as session:
+            result = await session.execute(select(Perk).order_by(Perk.name))
+            perks = result.scalars().all()
+
+        return await self.templates.TemplateResponse(
+            request,
+            "print_perks.html",
+            context={"perks": perks},
+        )
+
+
 class ImportView(BaseView):
     name = "Импорт"
     icon = "fa-solid fa-file-import"
@@ -627,6 +663,8 @@ def setup_admin(app):
     admin.add_view(TransactionAdmin)
     admin.add_view(AttributeAdmin)
     admin.add_view(PrintQRView)
+    admin.add_view(PrintItemsView)
+    admin.add_view(PrintPerksView)
     admin.add_view(ImportView)
 
     return admin
