@@ -98,6 +98,19 @@ def format_balance(value):
     return Markup(f'<strong>{value}</strong> 🔴')
 
 
+def format_expires_at(expires_at):
+    """Format expires_at with color based on expiration status."""
+    from datetime import datetime, timezone
+    if not expires_at:
+        return "-"
+    now = datetime.now(timezone.utc)
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    is_expired = expires_at <= now
+    color = "#dc3545" if is_expired else "#28a745"
+    return Markup(f'<span style="color:{color};font-weight:bold;">{expires_at}</span>')
+
+
 class UserAdmin(ModelView, model=User):
     name = "Игрок"
     name_plural = "Игроки"
@@ -310,6 +323,10 @@ class ActiveEffectAdmin(ModelView, model=ActiveEffect):
         "effect_value": "Значение",
         "applied_at": "Применён",
         "expires_at": "Истекает",
+    }
+
+    column_formatters = {
+        "expires_at": lambda m, a: format_expires_at(m.expires_at),
     }
 
 
