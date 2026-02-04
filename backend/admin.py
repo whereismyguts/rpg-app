@@ -394,10 +394,9 @@ from sqladmin import BaseView, expose
 class PrintQRView(BaseView):
     name = "Печать QR"
     icon = "fa-solid fa-qrcode"
-    identity = "print-qr"
 
-    @expose("/", methods=["GET"])
-    async def print_qr_page(self, request: Request):
+    @expose("/print-qr", methods=["GET"])
+    async def print_qr(self, request: Request):
         from models.base import async_session
         async with async_session() as session:
             result = await session.execute(select(User).order_by(User.name))
