@@ -3,6 +3,7 @@
 from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, now_local
@@ -24,10 +25,12 @@ class Item(Base):
     image_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     # instant effects
     hp_restore: Mapped[int | None] = mapped_column(Integer, nullable=True)  # instant HP heal
-    # temporary effect fields
+    # temporary effect fields (legacy single effect)
     effect_type: Mapped[str | None] = mapped_column(String(50), nullable=True)
     effect_value: Mapped[int | None] = mapped_column(Integer, nullable=True)
     effect_duration: Mapped[int | None] = mapped_column(Integer, nullable=True)  # minutes
+    # multiple effects: [{"type": "attr_strength", "value": 1}, {"type": "attr_charisma", "value": 1}]
+    effects: Mapped[list | None] = mapped_column(JSONB, nullable=True)
 
     trader: Mapped["Trader | None"] = relationship("Trader", back_populates="items")
 

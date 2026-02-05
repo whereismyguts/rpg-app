@@ -278,11 +278,21 @@ class DatabaseService:
                 select(Item).where(Item.item_id == item_id)
             )
             item = item_result.scalar_one_or_none()
-            if not item or not item.effect_type or not item.effect_duration:
+            if not item or not item.effect_duration:
+                return False
+
+            # get effects list - from effects array or legacy single effect
+            effects_list = []
+            if item.effects:
+                effects_list = item.effects
+            elif item.effect_type:
+                effects_list = [{"type": item.effect_type, "value": item.effect_value or 0}]
+
+            if not effects_list:
                 return False
 
             now = now_local()
-            # check for existing active effect
+            # check for existing active effect from this item
             existing = await session.execute(
                 select(ActiveEffect)
                 .where(ActiveEffect.user_id == user.id)
@@ -292,16 +302,17 @@ class DatabaseService:
             if existing.scalar_one_or_none():
                 return False
 
-            # create new active effect
+            # create active effects for each effect in the list
             expires_at = now + timedelta(minutes=item.effect_duration)
-            effect = ActiveEffect(
-                user_id=user.id,
-                item_id=item.id,
-                effect_type=item.effect_type,
-                effect_value=item.effect_value or 0,
-                expires_at=expires_at
-            )
-            session.add(effect)
+            for eff in effects_list:
+                effect = ActiveEffect(
+                    user_id=user.id,
+                    item_id=item.id,
+                    effect_type=eff.get("type", ""),
+                    effect_value=eff.get("value", 0),
+                    expires_at=expires_at
+                )
+                session.add(effect)
             await session.commit()
             return True
 
