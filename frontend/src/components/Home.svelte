@@ -230,6 +230,11 @@
                   <img src={perk.image_url} alt={perk.name} class="perk-image" />
                 {/if}
                 <span class="perk-name">{perk.name}</span>
+                {#if perk.effect_type}
+                  <span class="perk-effect" class:positive={perk.effect_value > 0} class:negative={perk.effect_value < 0}>
+                    {perk.effect_value > 0 ? '+' : ''}{perk.effect_value}
+                  </span>
+                {/if}
                 <span class="perk-arrow">{expandedPerk === perk.perk_id ? '▼' : '▶'}</span>
               </div>
               {#if expandedPerk === perk.perk_id}
@@ -545,6 +550,24 @@
   .perk-arrow {
     font-size: 0.8rem;
     color: var(--terminal-green-dim);
+  }
+
+  .perk-effect {
+    font-size: 0.75rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: bold;
+    margin-right: 8px;
+  }
+
+  .perk-effect.positive {
+    background: rgba(20, 255, 0, 0.2);
+    color: var(--terminal-green);
+  }
+
+  .perk-effect.negative {
+    background: rgba(255, 68, 68, 0.2);
+    color: #ff4444;
   }
 
   .perk-description {
