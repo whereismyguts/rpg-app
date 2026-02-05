@@ -22,6 +22,22 @@
                      alt="QR {{ item.item_id }}" class="qr-img">
                 <div class="qr-name">{{ item.name }}</div>
                 <div class="qr-price">{{ item.price }} 🔴</div>
+                <div class="qr-effects">
+                    {% if item.effects %}
+                        {% for eff in item.effects %}
+                            <span class="effect {% if eff.value > 0 %}positive{% else %}negative{% endif %}">
+                                {{ eff.type.replace('attr_', '').upper()[:3] }} {{ '+' if eff.value > 0 else '' }}{{ eff.value }}
+                            </span>
+                        {% endfor %}
+                    {% elif item.effect_type %}
+                        <span class="effect {% if item.effect_value > 0 %}positive{% else %}negative{% endif %}">
+                            {{ item.effect_type.replace('attr_', '').upper()[:3] }} {{ '+' if item.effect_value > 0 else '' }}{{ item.effect_value }}
+                        </span>
+                    {% endif %}
+                    {% if item.hp_restore %}
+                        <span class="effect hp">HP +{{ item.hp_restore }}</span>
+                    {% endif %}
+                </div>
             </div>
             {% endfor %}
         </div>
@@ -60,8 +76,39 @@
     }
 
     .qr-price {
-        font-size: 12px;
+        font-size: 14px;
         color: #666;
+        font-weight: bold;
+    }
+
+    .qr-effects {
+        margin-top: 6px;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 4px;
+    }
+
+    .effect {
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-weight: bold;
+    }
+
+    .effect.positive {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .effect.negative {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .effect.hp {
+        background: #fff3cd;
+        color: #856404;
     }
 
     @media print {
@@ -96,6 +143,15 @@
 
         .qr-price {
             font-size: 10px;
+        }
+
+        .qr-effects {
+            margin-top: 4px;
+        }
+
+        .effect {
+            font-size: 8px;
+            padding: 1px 4px;
         }
     }
 </style>
