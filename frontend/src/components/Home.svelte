@@ -232,7 +232,7 @@
                 <span class="perk-name">{perk.name}</span>
                 {#if perk.effect_type}
                   <span class="perk-effect" class:positive={perk.effect_value > 0} class:negative={perk.effect_value < 0}>
-                    {perk.effect_value > 0 ? '+' : ''}{perk.effect_value}
+                    {perk.effect_type.replace('attr_', '').slice(0, 3).toUpperCase()} {perk.effect_value > 0 ? '+' : ''}{perk.effect_value}
                   </span>
                 {/if}
                 <span class="perk-arrow">{expandedPerk === perk.perk_id ? '▼' : '▶'}</span>
