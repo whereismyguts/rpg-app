@@ -21,6 +21,13 @@
                 <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=PERK:{{ perk.perk_id }}"
                      alt="QR {{ perk.perk_id }}" class="qr-img">
                 <div class="qr-name">{{ perk.name }}</div>
+                {% if perk.effect_type %}
+                <div class="qr-effects">
+                    <span class="effect {% if perk.effect_value > 0 %}positive{% else %}negative{% endif %}">
+                        {{ perk.effect_type.replace('attr_', '').upper()[:3] }} {{ '+' if perk.effect_value > 0 else '' }}{{ perk.effect_value }}
+                    </span>
+                </div>
+                {% endif %}
             </div>
             {% endfor %}
         </div>
@@ -59,6 +66,31 @@
         word-wrap: break-word;
     }
 
+    .qr-effects {
+        margin-top: 6px;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 4px;
+    }
+
+    .effect {
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-weight: bold;
+    }
+
+    .effect.positive {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .effect.negative {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
     @media print {
         .d-print-none {
             display: none !important;
@@ -87,6 +119,15 @@
 
         .qr-name {
             font-size: 12px;
+        }
+
+        .qr-effects {
+            margin-top: 4px;
+        }
+
+        .effect {
+            font-size: 8px;
+            padding: 1px 4px;
         }
     }
 </style>
