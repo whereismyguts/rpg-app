@@ -22,6 +22,7 @@ class Perk(Base):
     effect_type: Mapped[str | None] = mapped_column(String(50), nullable=True)
     effect_value: Mapped[int | None] = mapped_column(Integer, nullable=True)
     image_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    link: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     user_perks: Mapped[list["UserPerk"]] = relationship("UserPerk", back_populates="perk")
 
@@ -37,6 +38,7 @@ class Perk(Base):
             "effect_type": self.effect_type or "",
             "effect_value": self.effect_value or 0,
             "image_url": self.image_url or "",
+            "link": self.link or "",
         }
 
 

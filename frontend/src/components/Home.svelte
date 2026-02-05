@@ -232,10 +232,17 @@
                 <span class="perk-name">{perk.name}</span>
                 <span class="perk-arrow">{expandedPerk === perk.perk_id ? '▼' : '▶'}</span>
               </div>
-              {#if expandedPerk === perk.perk_id && perk.description}
-                <div class="perk-description">
-                  {perk.description}
-                </div>
+              {#if expandedPerk === perk.perk_id}
+                {#if perk.description}
+                  <div class="perk-description">
+                    {perk.description}
+                  </div>
+                {/if}
+                {#if perk.link}
+                  <a href={perk.link} target="_blank" rel="noopener" class="perk-link" on:click|stopPropagation>
+                    Подробнее →
+                  </a>
+                {/if}
               {/if}
             </button>
           {/each}
@@ -547,6 +554,18 @@
     font-size: 0.85rem;
     color: var(--terminal-green-dim);
     line-height: 1.5;
+  }
+
+  .perk-link {
+    display: block;
+    margin-top: 8px;
+    color: var(--terminal-amber);
+    text-decoration: none;
+    font-size: 0.85rem;
+  }
+
+  .perk-link:hover {
+    text-decoration: underline;
   }
 
   .qr-section {

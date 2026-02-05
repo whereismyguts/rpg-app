@@ -241,7 +241,7 @@ class PerkAdmin(ModelView, model=Perk):
     name_plural = "Перки"
     icon = "fa-solid fa-star"
 
-    column_list = ["id", "qr_code", "image", "perk_id", "name", "one_time", "effect_type", "effect_value", "description"]
+    column_list = ["id", "qr_code", "image", "perk_id", "name", "one_time", "effect_type", "effect_value", "link", "description"]
     column_searchable_list = ["name", "perk_id", "description"]
     column_sortable_list = ["id", "name", "one_time"]
 
@@ -256,6 +256,7 @@ class PerkAdmin(ModelView, model=Perk):
         "effect_type": "Тип эффекта",
         "effect_value": "Значение",
         "image_url": "URL картинки",
+        "link": "Ссылка",
     }
 
     form_excluded_columns = ["user_perks"]
