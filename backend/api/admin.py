@@ -9,7 +9,8 @@ from config.settings import settings
 from services.database import db_service
 from services.imagegen import generate_image, upload_to_catbox
 from models import async_session, Attribute, Trader, Item, Perk, User
-from sqlalchemy import select
+from models.transaction import Transaction
+from sqlalchemy import select, distinct
 
 router = APIRouter()
 
@@ -93,6 +94,17 @@ async def get_all_users():
     """Get all users for admin."""
     users = await db_service.get_all_users()
     return {"users": users}
+
+
+@router.get("/logged-in")
+async def get_logged_in_users():
+    """Get list of player_uuids that have at least one login transaction."""
+    async with async_session() as session:
+        result = await session.execute(
+            select(distinct(Transaction.to_id)).where(Transaction.tx_type == "login")
+        )
+        uuids = [row[0] for row in result.all()]
+    return {"logged_in": uuids}
 
 
 @router.get("/items")

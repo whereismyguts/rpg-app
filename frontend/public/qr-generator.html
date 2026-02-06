@@ -168,6 +168,7 @@
 
             <div id="entitySelectContainer">
                 <label id="entityLabel">ИГРОК:</label>
+                <input type="text" id="entitySearch" placeholder="Фильтр..." oninput="filterEntitySelect()" style="margin-bottom:5px">
                 <select id="entitySelect" onchange="onEntitySelect()">
                     <option value="">-- Загрузка... --</option>
                 </select>
@@ -198,6 +199,7 @@
             </select>
 
             <label>ВЫБЕРИТЕ:</label>
+            <input type="text" id="imageEntitySearch" placeholder="Фильтр..." oninput="filterImageEntitySelect()" style="margin-bottom:5px">
             <select id="imageEntitySelect">
                 <option value="">-- Загрузка... --</option>
             </select>
@@ -218,6 +220,7 @@
 
     <script>
         let entityData = { users: [], items: [], perks: [] };
+        let loggedInUuids = new Set();
 
         const API_BASE = window.location.port === '5174'
             ? 'http://localhost:8001'
@@ -254,19 +257,22 @@
 
         async function loadAllEntities() {
             try {
-                const [usersRes, itemsRes, perksRes] = await Promise.all([
+                const [usersRes, itemsRes, perksRes, loggedRes] = await Promise.all([
                     fetch(`${API_BASE}/api/admin/users`),
                     fetch(`${API_BASE}/api/admin/items`),
-                    fetch(`${API_BASE}/api/admin/perks`)
+                    fetch(`${API_BASE}/api/admin/perks`),
+                    fetch(`${API_BASE}/api/admin/logged-in`)
                 ]);
 
                 const usersData = await usersRes.json();
                 const itemsData = await itemsRes.json();
                 const perksData = await perksRes.json();
+                const loggedData = await loggedRes.json();
 
                 entityData.users = usersData.users || [];
                 entityData.items = itemsData.items || [];
                 entityData.perks = perksData.perks || [];
+                loggedInUuids = new Set(loggedData.logged_in || []);
 
                 onTypeChange();
             } catch (e) {
@@ -288,7 +294,7 @@
                 label.textContent = 'ИГРОК:';
                 options = entityData.users.map(u => ({
                     value: u.player_uuid,
-                    label: `${u.name} (${u.player_uuid})`
+                    label: `${loggedInUuids.has(u.player_uuid) ? '✅' : '⬜'} ${u.name} (${u.player_uuid})`
                 }));
             } else if (type === 'PAY') {
                 label.textContent = 'ТОВАР:';
@@ -315,7 +321,15 @@
                 select.appendChild(o);
             });
 
+            // show login stats for player lists
+            if ((type === 'LOGIN' || type === 'SEND') && entityData.users.length) {
+                const total = entityData.users.length;
+                const logged = entityData.users.filter(u => loggedInUuids.has(u.player_uuid)).length;
+                info.textContent = `Вошли: ${logged} / ${total}`;
+            }
+
             document.getElementById('qrValue').value = '';
+            document.getElementById('entitySearch').value = '';
         }
 
         function onEntitySelect() {
@@ -495,6 +509,24 @@
                 btn.disabled = false;
                 btn.textContent = '[ СГЕНЕРИРОВАТЬ КАРТИНКУ ]';
             }
+        }
+
+        function filterEntitySelect() {
+            const q = document.getElementById('entitySearch').value.toLowerCase();
+            const select = document.getElementById('entitySelect');
+            Array.from(select.options).forEach(opt => {
+                if (!opt.value) return;
+                opt.style.display = opt.textContent.toLowerCase().includes(q) ? '' : 'none';
+            });
+        }
+
+        function filterImageEntitySelect() {
+            const q = document.getElementById('imageEntitySearch').value.toLowerCase();
+            const select = document.getElementById('imageEntitySelect');
+            Array.from(select.options).forEach(opt => {
+                if (!opt.value) return;
+                opt.style.display = opt.textContent.toLowerCase().includes(q) ? '' : 'none';
+            });
         }
 
         // init image type selector on load
