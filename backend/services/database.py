@@ -261,8 +261,9 @@ class DatabaseService:
                 .where(User.player_uuid == player_uuid)
                 .where(Item.item_id == item_id)
                 .where(ActiveEffect.expires_at > now)
+                .limit(1)
             )
-            return result.scalar_one_or_none() is not None
+            return result.scalars().first() is not None
 
     async def apply_item_effect(self, player_uuid: str, item_id: str) -> bool:
         """Apply temporary effect from item. Returns True if effect was applied."""
@@ -298,8 +299,9 @@ class DatabaseService:
                 .where(ActiveEffect.user_id == user.id)
                 .where(ActiveEffect.item_id == item.id)
                 .where(ActiveEffect.expires_at > now)
+                .limit(1)
             )
-            if existing.scalar_one_or_none():
+            if existing.scalars().first():
                 return False
 
             # create active effects for each effect in the list

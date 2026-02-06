@@ -75,7 +75,8 @@ async def purchase_item(request: PurchaseRequest):
 
     # apply temporary effect if item has one
     effect_applied = False
-    if item.get("effect_type") and item.get("effect_duration"):
+    has_effects = (item.get("effect_type") or item.get("effects")) and item.get("effect_duration")
+    if has_effects:
         effect_applied = await db_service.apply_item_effect(request.player_uuid, request.item_id)
 
     return {
