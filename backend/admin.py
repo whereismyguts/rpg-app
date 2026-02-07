@@ -370,6 +370,28 @@ class TraderAdmin(ModelView, model=Trader):
             data["trader_id"] = data["trader_id"].upper()
 
 
+_uuid_name_cache = {}
+
+
+def _resolve_player_name(entity_type, entity_id):
+    """Resolve player UUID to name, with cache."""
+    if entity_type != "player":
+        return entity_id
+    if entity_id not in _uuid_name_cache:
+        from sqlalchemy import text
+        from models.base import sync_engine
+        with sync_engine.connect() as conn:
+            row = conn.execute(
+                text("SELECT name FROM users WHERE player_uuid = :uuid"),
+                {"uuid": entity_id}
+            ).fetchone()
+            _uuid_name_cache[entity_id] = row[0] if row else None
+    name = _uuid_name_cache.get(entity_id)
+    if name:
+        return Markup(f'{name} <span style="color:#888;font-size:0.8em;">({entity_id})</span>')
+    return entity_id
+
+
 class TransactionAdmin(ModelView, model=Transaction):
     name = "Транзакция"
     name_plural = "Транзакции"
@@ -384,9 +406,9 @@ class TransactionAdmin(ModelView, model=Transaction):
         "timestamp": "Время",
         "tx_type": "Тип",
         "from_type": "Откуда (тип)",
-        "from_id": "Откуда (ID)",
+        "from_id": "Откуда",
         "to_type": "Куда (тип)",
-        "to_id": "Куда (ID)",
+        "to_id": "Куда",
         "amount": "Сумма",
         "description": "Описание",
     }
@@ -397,11 +419,17 @@ class TransactionAdmin(ModelView, model=Transaction):
 
     column_formatters = {
         "amount": lambda m, a: format_balance(m.amount) if m.amount else "-",
+        "from_id": lambda m, a: _resolve_player_name(m.from_type, m.from_id),
+        "to_id": lambda m, a: _resolve_player_name(m.to_type, m.to_id),
         "tx_type": lambda m, a: {
             "transfer": "💸 Перевод",
             "purchase": "🛒 Покупка",
             "perk": "⭐ Перк",
             "login": "🔐 Вход",
+            "damage": "💀 Урон",
+            "heal": "❤️ Лечение",
+            "death_penalty": "☠️ Штраф",
+            "respawn": "🔄 Возрождение",
         }.get(m.tx_type, m.tx_type),
     }
 
