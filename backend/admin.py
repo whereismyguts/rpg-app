@@ -397,7 +397,7 @@ class TransactionAdmin(ModelView, model=Transaction):
     name_plural = "Транзакции"
     icon = "fa-solid fa-exchange-alt"
 
-    column_list = ["id", "timestamp", "tx_type", "from_type", "from_id", "to_type", "to_id", "amount", "description"]
+    column_list = ["id", "timestamp", "tx_type", "from_id", "to_id", "amount", "description"]
     column_sortable_list = ["id", "timestamp", "amount", "tx_type"]
     column_default_sort = [("timestamp", True)]
 
