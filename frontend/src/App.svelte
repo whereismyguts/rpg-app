@@ -23,7 +23,9 @@
       window.Telegram.WebApp.ready();
       window.Telegram.WebApp.expand();
 
+      // store initData so it's sent with any subsequent login (QR-based included)
       if (window.Telegram.WebApp.initData) {
+        api.setInitData(window.Telegram.WebApp.initData);
         try {
           const result = await api.login(window.Telegram.WebApp.initData, null, null);
           if (result && result.player_uuid) {

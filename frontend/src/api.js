@@ -3,6 +3,11 @@ const BASE_URL = '/api';
 class ApiClient {
   constructor() {
     this.playerUuid = null;
+    this.initData = null;
+  }
+
+  setInitData(data) {
+    this.initData = data;
   }
 
   setPlayerUuid(uuid) {
@@ -35,7 +40,7 @@ class ApiClient {
     return this.request('/auth/login', {
       method: 'POST',
       body: JSON.stringify({
-        init_data: initData,
+        init_data: initData || this.initData,
         player_uuid: playerUuid,
         password: password,
       }),
